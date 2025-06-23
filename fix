@@ -1,14 +1,11 @@
 on *:load:{
   unset %f
-  var %m = $chr(59) you can put your own q here, this file will not be overwritten when updating nbs-irc.
-  if (!$exists(scripts\a-own.nbs)) .write scripts\a-own.nbs $replace(%m,q,aliases)
-  .load -a scripts\a-own.nbs
-  n.checkscript alias1.nbs -a
-  n.checkscript alias2.nbs -a
-  n.checkscript alias3.nbs -a
-  if (!$exists(scripts\r-own.nbs)) .write scripts\r-own.nbs $replace(%m,q,scripts)
-  .load -rs1 scripts\r-own.nbs
-  n.checkscript main.nbs -rs
+  n.checkscript alias1.mrc -a
+  n.checkscript alias2.mrc -a
+  n.checkscript alias3.mrc -a
+  if (!$exists(scripts\ownstuff.mrc)) .write scripts\ownstuff.mrc $chr(59) you can put your own scripts here, this file will not be overwritten when updating nbs-irc.
+  .load -rs1 scripts\ownstuff.mrc
+  n.checkscript main.mrc -rs
   if (!$tname) .theme cold
   if (!%f) .echo -qg $input(Repair appears to be successfull $+ $chr(44) restart may be required,o)
   .unload -rs fix

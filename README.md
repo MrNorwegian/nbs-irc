@@ -1,26 +1,36 @@
 # nbs-irc
-Fork of latest nbs-irc code to add support for various modern [mIRC](http://www.mirc.co.uk/) features.
-This is based off nbs-irc v2.39-110803 (about box lists it as build 120128), downloadable from [nbs-irc.net](http://nbs-irc.net/). A copy of the latest official installers are provided at the [releases section](https://github.com/ElectronicWar/nbs-irc/releases) in case the original homepage goes down.
+The original version is v2.39-110803 and can be found at the original repository.
+This fork is based on v2.43-160326, which is the latest release as of 23 june 2025. Any further changes made to the original repository may not be compatible with this version.
 
-nbs-irc is copyright (c) the original authors and contributors.
+nbs-irc is copyright © the original authors and contributors.
 
-Changes are copyright (c) 2015 Manuel Kröber and
-licensed under the MIT license, see LICENSE.
+Older changes are copyright © 2015 Manuel Kröber and licensed under the MIT License (see LICENSE).
+New changes are copyright © 2024 Dani *** and licensed under the MIT License (see LICENSE).
 
-## Improvements
+## Improvements ( By the original fork )
 * Full support for ZNC 1.5+ playback buffer timestamps (IRCv3 server-time extension)
 * Support for latest mIRC, starting at 7.33
 
+## Improvements ( By me )
+* 
+
 ## Planned Features
-* Looking into building an installer like the original nbs-irc is using. Any help with that is very appreciated.
+* Add ZNC support
+* Add support for GNUWorld (X and uworld @ undernet)
+* Add support for Atheme\anope services
+* More theme customize 
+* Anti excess support
+* Redesign of chancentral
+* Redesign of popups
+- Including sending op\deop etc via botnet (requires dcc chat)
 
 ## Requirements
-mIRC 7.33 or newer is required.
+mIRC 7.33 or newer is required but i'm using 7.77
 
 ## Contributions
-Please report problems, bugs, improvements or features by opening a [Github Issue](https://github.com/ElectronicWar/nbs-irc/issues).
+Please report problems, bugs, improvements or features by opening a [Github Issue](https://github.com/MrNorwegian/nbs-irc/issues).
 
 Code contributions are accepted via pull requests. Please use the latest official mIRC release for development and include required minimal version for your changes if you tap into newer APIs.  Thank you!
 
 ## Contact
-Some regulars and myself are usually available at [#nbs-irc @ QuakeNet](irc://irc.quakenet.org/nbs-irc) for anything nbs-irc related. Please note that this is a very slow channel and we might be AFK. It's usually better to open an issue for anything bug-related.
+Nothing yet
