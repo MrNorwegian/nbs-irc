@@ -1,3 +1,14 @@
+# Things i know i have to do:
 * Redo n.versioncheck
 - This checks orgiginal website but that doesnt work anymore
 - Consider checking github instead
+
+# Ideas:
+
+# The big cleanup:
+* Move all aliases from alias*.mrc to aliases.mrc
+- Also all aliases from main.mrc to aliases.mrc
+
+# Loading 
+* Create popups.mrc 
+- Move all popups to this file from main.mrc

@@ -7,6 +7,12 @@ nbs-irc is copyright © the original authors and contributors.
 Older changes are copyright © 2015 Manuel Kröber and licensed under the MIT License (see LICENSE).
 New changes are copyright © 2024 Dani *** and licensed under the MIT License (see LICENSE).
 
+## How to get started
+1. Install mirc 7.33 or newer (i'm using 7.77, not tested newer)
+2. Download release.zip and unpack it into the mirc folder
+3. Start mirc
+4. If nbs is not loading, Type: /load -rs load.mrc
+
 ## Improvements ( By the original fork )
 * Full support for ZNC 1.5+ playback buffer timestamps (IRCv3 server-time extension)
 * Support for latest mIRC, starting at 7.33

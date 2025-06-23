@@ -1,46 +1,3 @@
-alias n.checkfiles {
-  set %f bug
-  if ($script(blandat.nbs)) .unload -rs blandat.nbs
-  if ($script(jpqosv.nbs)) .unload -rs jpqosv.nbs
-  if ($script(raw.nbs)) .unload -rs raw.nbs
-  if ($script(tema.nbs)) .unload -rs tema.nbs
-  if ($script(dialog.nbs)) .unload -rs dialog.nbs
-  if ($script(popups1.nbs)) .unload -rs popups1.nbs
-
-  if ($script(scripts\alias1.nbs)) .unload -rs alias1.nbs | load -rs scripts\alias1.mrc
-  if ($script(scripts\alias2.nbs)) .unload -rs alias2.nbs | load -rs scripts\alias2.mrc
-  if ($script(scripts\alias3.nbs)) .unload -rs alias3.nbs | load -rs scripts\alias3.mrc
-  if ($script(scripts\main.nbs)) .unload -rs main.nbs | load -rs scripts\main.mrc
-
-  n.checkscript alias1.mrc -a
-  n.checkscript alias2.mrc -a
-  n.checkscript alias3.mrc -a
-
-  if (!$exists(scripts\ownstuff.mrc)) {
-    .write scripts\ownstuff.mrc $chr(59) you can put your own scripts here, this file will not be overwritten when updating nbs-irc.
-    .load -rs1 scripts\ownstuff.mrc
-  }
-  if (!$tname) .theme cold
-}
-
-alias -l n.checkscript {
-  if (!$script($1)) {
-    if ($exists(scripts\ $+ $1)) .load -a scripts\ $+ $1
-    else {
-      if ($dialog(strt)) dialog -x strt
-      var %a = -sge 4,4 $str(W,52)
-      echo %a
-      echo 4 -sg * Error: file $+($gettok($mircdir,-1, 92),\nbs\, $1) is missing, Replace the file and restart nbs or reinstall an update/full version.
-      echo -ag * Note: installing updates will keep all settings, full reinstall will only keep nbs settings.
-      echo %a
-      if (%f != 1) {
-        .echo -qg $input(There is/are some file(s) missing $+ $chr(44) check the status window. nbs will not work properly until you resolve this.,o)
-        set %f 1
-      }
-    }
-  }
-}
-
 alias n.ds {
   if (!$3) return
   elseif ($1 == cw) {
@@ -962,52 +919,7 @@ alias power {
   }
   $iif($1 == -e,echo -agt $npre you are,me is) oped in $+(%op,/,$chan(0)) channels on $+($network,.) (in control of $+(%s,/,%alla) people)
 }
-on *:start:{
-  if ($version < 7) {
-    if ($n.input(Error: your mIRC version is $version $+ $c44 nbs-irc needs mIRC 7.0 or higher. $crlf $crlf $+ Would you like to go the mIRC download site?,y/n)) n.url http://www.mirc.com/get.html
-    exit
-  }
-  if ($uptime(mirc) < 10000) n.checkfiles
-  dll scripts\dll\dcx.dll WindowProps $window(-2).hwnd +i 0 nbs.ico
-  .echo -qg $findfile(scripts\temp\topic\,*,0,.remove $1-)
-  .echo -qg $findfile(scripts\temp\,paste_*,0,.remove $1-)
-  .echo -qg $findfile(scripts\temp\,url_*,0,.remove $1-)
-  hmake temp 5
-  n.checkini
-  n.reloadconfig
-  n.updateevents
-  if ($ncfg(exttb) == 1) n.toolbar
-  background -ux
-  if ($dialog(strt)) did -a strt 1 3
-  if ($os == 2k) || ($os == 98) || ($os == 95) || ($os == nt) tray -i17 scripts\dll\i.dll
-  else tray -i18 scripts\dll\i.dll
-  .timertitlebar -i 0 10 titleupdate
-  .timestamp -f $n.timestamp
-  .disable #röstning
-  hmake prot 10
-  hload -i prot config\config.ini protections
-  if ($dialog(strt)) did -a strt 1 7
-  if (!$tname) {
-    echo $color(info) -a - No theme loaded, loading default theme.
-    echo -a 
-    theme cold
-  }
-  cnicks
-  unset %txtload %wa.in %tedit* %n.connecting* %lag.* %temp %tmp* %ban* %oldnick.* %sbnc.* %psybnc.* %maxbans.* %topiclen.* %dns2nick* %addedit
-  ;if ($exists(scripts\r-own.nbs)) .load -rs1 scripts\r-own.nbs
-  if ($ncfg(updated) != 1) {
-    if ($script(misc.ini)) .unload -rs scripts\misc.ini
-    if ($exists(scripts\misc.ini)) .remove scripts\misc.ini
-    w_ncfg updated 1
-  }
-  if ($exists(fix.ini)) .timer 1 1 .remove fix.ini
-  if (!$insttime) {
-    dlg 1st
-    set %nbs_vcheck 10
-  }
-  n.start.echo
-  autoconnect_connectnow
-}
+
 alias host2nick {
   if ($1) {
     set %dns2nick.host $1
@@ -4591,7 +4503,7 @@ on ^*:KICK:#:{
     }      
   }
 }
-on ^*:BAN:# {
+on ^*:BAN:#:{
   haltdef 
   if ($me isop #) && ($hget(nbs,banskydd) == 1) && ($banmask iswm $address($me,5)) && ($nick != $me) {
     !raw -q mode # -ob $nick $banmask $+ $crlf $+ KICK # $nick : $+ $hget(nbs,bsmed)
