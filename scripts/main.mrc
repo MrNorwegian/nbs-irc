@@ -1,1107 +1,4 @@
-alias n.ds {
-  if (!$3) return
-  elseif ($1 == cw) {
-    if ($did($dname,$2).state == 1) w_ncfg $3 1
-    else w_ncfg $3 o
-  }
-  elseif ($1 == cr) {
-    if ($ncfg($3) == 1) did -c $dname $2
-    else did -u $dname $2
-  }
-}
-
-alias n.preview {
-  if ($dialog($1)) && ($2) {
-    if (!$window(@previewx)) {
-      window -hodfnp +dL @previewx 99 $calc($dialog($1).y -60) $calc($window(-1).w -198) 52
-      drawrect @previewx $color(normal) 0 0 0 $calc($window(-1).w -198) 52
-      drawtext -o @previewx $color(highlight) tahoma 10 4 2 $iif($dialog(cc),Topic preview for %ccc $+ :,Preview - right click to close)
-      window -o @previewx 
-    }
-    if (!$window(@preview)) {
-      window -dhk0 +dL @preview 100 $calc($dialog($1).y -40) $calc($window(-1).w -200) 31
-    }
-    clear @preview
-    echo $iif($dialog(cc),$color(topic),$color(normal)) @preview $2-
-    window -o @preview
-  }
-  elseif ($window(@preview)) close -@ @preview*
-}
-
-on *:dialog:*:close:0:{
-  if ($window(@preview)) close -@ @preview*
-}
-
-alias setver {
-  var %date = $iif($1,$1,$date(yy-mm-dd))
-  write -c scripts\other\version %date
-  n.echo info -atg Version: $n.version ( $+ %date $+ )
-}
-
-alias n.servemp3 {
-  inc -u20 %mp3serv.prot 1
-  if ($hget(temp,mp3serv.file)) && (%mp3serv.prot < 4) && (!%mp3serv. [ $+ [ $1 ] ]) {
-    set -u10 %mp3serv. $+ $1 1
-    if (http://* !iswm $hget(temp,mp3serv.file)) {
-      .dcc maxcps $calc($iif($ncfg(mp3maxcps) == o,0,$ncfg(mp3maxcps)) * 1024)
-      dc $+ $chr(99) $chr(115) $+ e $+ $chr(110) $+ d $1 $hget(temp,mp3serv.file)
-    }
-    else echo $color(info) -stge Error: could not send $hget(temp,mp3serv.file)
-  }
-}
-alias n.url {
-  var %f = $+(scripts\temp\url_,$r(a,z),$r(a,z),$r(a,z),$r(a,z),.url)
-  write -c %f [InternetShortcut]
-  write %f URL= $+ $1-
-  .run %f
-  .timer 1 3 .remove %f
-}
-
-alias n.toolbar {
-  toolbar -r
-  toolbar -d sep1
-  toolbar -d sep2
-  toolbar -d sep3
-  toolbar -d sep4
-  toolbar -d sep5
-  toolbar -d sep6
-  toolbar -d sep7
-  toolbar -d chanlist
-  toolbar -d addrbook
-  toolbar -d timer
-  toolbar -d send
-  toolbar -d chat
-  toolbar -d dccopts
-  toolbar -d rcvdfiles
-  toolbar -d logfiles
-  toolbar -d notify
-  toolbar -d notify2
-  toolbar -d urls
-  toolbar -d urls2
-  toolbar -d about
-  toolbar -m 8 6
-  toolbar -m 6 7
-  toolbar -iz1n7 3 ac "Auto connect settings" scripts\dll\tb.dll /autocon @tb.ac
-  toolbar -is 5 s1
-  toolbar -is 10 s2
-  toolbar -iz1n0 11 nbs-setup "nbs options" scripts\dll\tb.dll /setup @tb.setup
-  toolbar -iz1n2 12 nbs-theme "Theme/font setup" scripts\dll\tb.dll /theme @tb.theme
-  toolbar -iz1n3 13 nbs-alarm "Alarm timer" scripts\dll\tb.dll /alarm @tb.alarm
-  toolbar -iz1n1 14 nbs-lv "Logviewer" scripts\dll\tb.dll /logg @tb.lv
-  if ($ncfg(toolbar_disable_winamp) != 1) {
-    toolbar -is 15 s3
-    toolbar -iz1n4 16 nbs-waprev "Previous track (Winamp)" scripts\dll\tb.dll "/dll scripts\dll\winamp.dll prevsong"
-    toolbar -iz1n5 17 nbs-waplaypause "Play/pause (Winamp)" scripts\dll\tb.dll "/dll scripts\dll\winamp.dll playpause"
-    toolbar -iz1n6 18 nbs-wanext "Next track (Winamp)" scripts\dll\tb.dll "/dll scripts\dll\winamp.dll nextsong"
-  }
-  if ($dialog(tb)) dialog -x tb
-  dlg tb
-  showmirc -s
-}
-menu @tb.setup {
-  .Misc settings $chr(9) (/misc):misc
-  .Theme/font settings $chr(9) (/theme):theme
-  .Sound/highlight settings $chr(9) (/nq):nq
-  .Song announce $chr(9) (/sa):sa
-  .Protections $chr(9) (/prot):prot
-  .Auto connect $chr(9) (/autocon):autocon
-  .Autojoin $chr(9) (/caj):caj
-  .QuakeNet setup $chr(9) (/quakenet):quakenet
-  .UnderNet setup $chr(9) (/undernet):undernet
-  .NickServ setup $chr(9) (/cns):cns
-  .Notifications $chr(9) (/popups):popups
-  .F-key bindings $chr(9) (/fkeys):fkeys
-  .Logviewer $chr(9) (/lv):lv
-  .Game launcher $chr(9) (/g-join):g-join
-  .Blacklist $chr(9) (/blist):blist
-  .Alarm timer $chr(9) (/alarm):alarm
-}
-menu @tb.theme {
-  Reload theme $chr(9) (/theme -r):theme -r
-  Edit theme $chr(9) (/tedit):tedit
-}
-menu @tb.alarm {
-  Ring in
-  .1 minute: .timeralarm 1 60 beep 10 100 | n.echo info -atg Alarm set: 1 minute
-  .2 minutes: .timeralarm 1 120 beep 10 100 | n.echo info -atg Alarm set: 2 minutes
-  .5 minutes: .timeralarm 1 300 beep 10 100 | n.echo info -atg Alarm set: 5 minutes
-  .10 minutes: .timeralarm 1 600 beep 10 100 | n.echo info -atg Alarm set: 10 minutes
-  Stop:.timeralarm off | splay stop
-}
-alias n.checkkey if ($chan($1).key) set %pw. [ $+ [ $1 ] ] $chan($1).key
-alias n.ptext {
-  if ($hget(nbs,popup_mode) == 2) && ($appactive) return
-  elseif ($hget(nbs,popup_mode) == 4) return
-  if ($hget(nbs,popup_away) == 1) && ($away) return
-  n.ptext2 $1-
-}
-alias n.ptext2 {
-  if ($chr(1) isin $2-) {
-    hadd -m temp lastpop $1-
-    if ($window(@n.popup)) close -@ @n.popup
-    var %1 = $gettok($1-,2,1), %2 = $gettok($1-,3-,1)
-    if ($gettok($1-,1,1)) set %popup.window $ifmatch
-    else unset %popup.window
-    var %font = $window(status window).font, %fontsize = $window(status window).fontsize
-    var %h = $calc($height(l,%font,%fontsize) +25)
-    if ($width(%2,%font,%fontsize) > 250) && ($width(%2,%font,%fontsize) <= 750) {
-      var %w = $calc($width(%2,%font,%fontsize) + $width(Mia,%font,%fontsize))
-    }
-    elseif ($width(%2,%font,%fontsize) <= 250) {
-      var %w = $calc($width(%2,%font,%fontsize) + (250 - $width(%2,%font,%fontsize)))
-    }
-    else {
-      while ($width(%2,%font,%fontsize) > 1000) var %2 = $left(%2,$calc($len(%2) -30))
-      while ($width(%2,%font,%fontsize) > 750) var %2 = $left(%2,$calc($len(%2) -10))
-      var %2 = $left(%2,$calc($len(%2) -3)) $+ ...
-      var %w = $calc($width(%2,%font,%fontsize) + $width(...,%font,%fontsize))
-    }
-    if ($chr(45) isin $hget(nbs,popup_posx)) && ($hget(nbs,popup_centerx) != 1) { var %x = $calc( [ $window(-1).w ] - (%w + $remove($hget(nbs,popup_posx),-))) }
-    elseif ($chr(45) !isin $hget(nbs,popup_posx)) && ($hget(nbs,popup_centerx) != 1) { var %x = $$hget(nbs,popup_posx) } 
-    elseif ($hget(nbs,popup_centerx) == 1) { var %x = $calc($window(-1).w /2- (%w /2)) }
-    if ($chr(45) isin $hget(nbs,popup_posy)) && ($hget(nbs,popup_centery) != 1)  { var %y = $calc( [ $window(-1).h ] - $remove($hget(nbs,popup_posy),-) ) }
-    elseif ($chr(45) !isin $hget(nbs,popup_posy)) && ($hget(nbs,popup_centery) != 1) { var %y = $hget(nbs,popup_posy) }
-    elseif ($hget(nbs,popup_centery) == 1) { var %y = $calc($window(-1).h /2- 19) }
-    window -hodfnp +dL @n.popup %x %y %w %h
-    drawfill @n.popup $color(background) 0 1 1
-    drawtext -o @n.popup $color(highlight) tahoma 10 4 2 %1
-    drawtext -o @n.popup $color(info) tahoma 10 $calc(%w -51) 2 $time
-    drawtext -p @n.popup $color(normal) $cit(%font) %fontsize 4 20 %2
-    drawrect @n.popup $color(normal) 0 0 0 %w %h
-    if ($timerncpopup) .timerncpopup off
-    .timerncpopup -oi 1 $iif($hget(nbs,popup_timeout),$ifmatch,7) close -@ @n.popup
-    window -o @n.popup
-  }
-}
-alias n.aj.edit {
-  if (!$1) return
-  var %a = config\autojoin- $+ $network $+ .txt
-  if ($read(%a,w,$1*)) {
-    write -dl $+ $readn %a
-    n.echo info -atg Removed $1 from autojoin $iif($ncfg(autojoin) != 1,$par(autojoin is off))
-  }
-  else {
-    if (k isin $chan($1).mode) && (!$chankey($1)) var %k = $n.input(Enter channel key:)
-    else var %k = $chankey($1)
-    write %a $1 %k
-    n.echo info -atg Added $1 $iif(%k,$par(key: %k)) to autojoin $iif($ncfg(autojoin) != 1,$par(note: autojoin is off))
-  }
-}
-alias invite {
-  if (!$2) && (#) !invite $1 #
-  else !invite $1-
-}
-alias away {
-  unset %n.away.*
-  !away $1-
-}
-alias lastpop {
-  n.ptext2 $hget(temp,lastpop)
-}
-alias logg {
-  if ($window(@logviewer)) && (!$n.input(Clear logviewer and load $window($active).logfile $+ ?,y/n)) return
-  close -@ @logviewer
-  lv $iif($1,$1,$active)
-}
-alias lv logviewer $1-
-alias logviewer {
-  if ($window(@logviewer)) {
-    window -a @logviewer
-    return
-  }
-  set %lv.dir $logdir
-  if ($1) {
-    if ($window($1)) {
-      set %lv.dir $nofile($window($1).logfile)
-      var %load = $n.log($1)
-    }
-    elseif ($exists($logdir $+ $network $+ \ $+ $1 $+ .log)) {
-      set %lv.dir $logdir $+ $network $+ \
-      var %load = %lv.dir $+ $1 $+ .log
-    }
-  }
-  window -l25eazk0 @Logviewer
-  if (%load) aline -l @logviewer $chr(91) .. $chr(93)
-  var %a = $finddir(%lv.dir,*,0,1,aline -l @logviewer $chr(91) $nopath($1-) $chr(93))
-  var %b = $findfile(%lv.dir,*.log,0,1,aline -l @logviewer $nopath($1-))
-  if (%load) {
-    if ($file(%load).size > 10000000) {
-      if (!$n.input(This is a very large log file ( $+ $round($calc($file(%load).size /1024/1024),2) MB) $+ $c44 loading will take some time. Do you want to continue?,y/n)) return
-    }
-    echo @logviewer $npre loading %load $+ ... 
-    loadbuf -pi4 @logviewer $+(",%load,")
-    echo @logviewer $npre $kl:($nopath(%load)) $lines(%load) lines, $round($calc($file(%load).size /1024),2) KB
-  }
-  ;%b log files and %a folders found in %lv.dir
-}
-alias slog {
-  if ($1) {
-    var %s.file = $n.log($active)
-    if (!$isfile(%s.file)) n.echo other -atg /slog: no log file found for $active
-    else {
-      var %s.win = @search:  $+ $nopath(%s.file), %t = $ticks
-      if ($file(%s.file).size > 10000000) {
-        if (!$n.input(This is a very large log file ( $+ $round($calc($file(%s.file).size /1024/1024),2) MB) $+ $c44 searching it will take some time. Do you want to continue?,y/n)) return
-      }
-      if (!$window(%s.win)) window -k0n %s.win
-      clear %s.win
-      echo -t %s.win $npre searching for $n.quote($1-) in %s.file
-      echo %s.win 
-      window -a %s.win
-      filter -fwpb $+(",%s.file,") %s.win * $+ $1- $+ *
-      if ($filtered) {
-        echo %s.win 
-        echo -t %s.win $npre found $filtered matches in %s.file $par($round($calc(($ticks - %t)/1000),1) $+ s)
-      }
-      else echo -t %s.win $npre no matches were found for $n.quote($1-) in %s.file
-    }
-  }
-  else n.echo info -atg usage: /slog <query>
-}
-alias n.echo {
-  if ($window($3)) && (a !isin $2) && (s !isin $2) echo $color($1) $2 $+ i4 $3 $npre $4-
-  elseif ($cid != $activecid) {
-    scid $cid
-    echo $color($1) $replace($2,a,s) $+ i4 $npre $3-
-    scid -r
-  }
-  elseif (t isin $2) echo $color($1) $2 $+ i4 $npre $3-
-  else echo $color($1) $2 $+ i4 $3-
-}
-alias month {
-  if ($1 isnum 1-12) {
-    var %d = $calc($1 +1), %days = $iif($1 == 12,31,$gettok($asctime($calc($ctime(1/ $+ %d $+ /2008 00:00) - 86400)),3,32))
-    n.echo info -atg Month $1 $+ : $clr(norm,$date($ctime(08- $+ $1 $+ -01),mmmm)) $par(%days days)
-  }
-  else n.echo info -atg Usage: /month <1-12>
-}
-alias n.download {
-  if (!$sock(n.download)) && ($1) {
-    var %url = $remove($1,http://)
-    var %host = $gettok(%url,1,47), %fil = / $+ $gettok(%url,2-,47)
-    if ($crc(scripts\temp\ $+ $nopath(%fil)) > 0) set %crc. [ $+ [ $nopath(%fil) ] ] $ifmatch
-    sockopen n.download %host 80
-    sockmark n.download HEAD %host %fil
-  }
-}
-
-on *:SOCKOPEN:n.download:{
-  if (!$sockerr) { 
-    write -c scripts\temp\ $+ $n.file($nopath($gettok($sock($sockname).mark,3,32)))
-    sockwrite -n $sockname GET $gettok($sock($sockname).mark,3,32) HTTP/1.1
-    sockwrite -n $sockname HOST: $gettok($sock($sockname).mark,2,32)
-    sockwrite -n $sockname User-Agent: $n.useragent
-    sockwrite -n $sockname Accept: text/plain
-    sockwrite -n $sockname $crlf
-  }
-}
-
-on *:SOCKREAD:n.download:{
-  if (!$sockerr) {
-    var %head
-    :start
-    if ($gettok($sock($sockname).mark,1,32) == head) { sockread %head }
-    else { sockread &b }
-    if ($sockbr) {
-      if ($gettok($sock($sockname).mark,1,32) == head) {
-        if (http/?.? iswm $gettok(%head,1,32)) && ($gettok(%head,2,32) != 200) {
-          return
-        }
-        elseif (!%head) sockmark $sockname GET $gettok($sock($sockname).mark,2-,32)
-      }
-      elseif ($gettok($sock($sockname).mark,1,32) == get) {
-        bwrite scripts\temp\ $+ $n.file($nopath($gettok($sock($sockname).mark,3,32))) -1 &b
-      }
-      goto start
-    }
-  }
-}
-
-alias channel {
-  if (% [ $+ [ # ] $+ ] .disabled == 1) && (!$chan(#).mode) {
-    n.echo other -atg $kl:(channel central) please wait...
-    return
-  }
-  if ($ncfg(newcc) == 1) cc #
-  else !channel
-}
-alias auth { 
-  if ($n.qnet) {
-    if ($2) {
-      .raw auth $1-
-      var %a = auth $par($1)
-    }
-    elseif ($ncfg(use_challengeauth) == 1) && ($authedited) {
-      .msg Q@CServe.quakenet.org challenge
-      var %a = auth challenge $par($ncfg(authnick))
-    }
-    elseif ($authedited) {
-      var %q = $ncfg(authpass), %k = $calc($len(%q) +1), %x = 1, %r
-      while (%k > 1) {
-        var %k = $calc(%k -3), %r = %r $+ $chr($calc($mid(%q,%k,3) + %x))
-        inc %x 1
-      }
-      .raw auth $ncfg(authnick) %r
-      var %a = auth $par($ncfg(authnick))
-    }
-    if (%a) n.echo notice -agqt sending %a
-  }
-  elseif ($n.unet) {
-    if ($2) {
-      .msg x@channels.undernet.org login $1-
-      var %a = auth $par($1)
-    }
-    elseif ($ncfg(undernet_authnick)) {
-      var %q = $ncfg(undernet_authpass), %k = $calc($len(%q) +1), %x = 1, %r
-      while (%k > 1) {
-        var %k = $calc(%k -3), %r = %r $+ $chr($calc($mid(%q,%k,3) + %x))
-        inc %x 1
-      }
-      .msg x@channels.undernet.org login $ncfg(undernet_authnick) %r
-      var %a = auth $par($ncfg(undernet_authnick))
-    }
-    if (%a) n.echo notice -agqt sending %a
-  }
-}
-alias sendsong mp3send $1-
-alias wsend mp3send $1-
-alias exportlog {
-  if ($1) var %f = $1-, %a
-  elseif (!$1) var %f = $sfile($logdir *.*,Please select log file to export)
-  if ($file(%f).size > 10000000) && (!$n.input(This may take some time. $crlf $crlf $+ Do you want to continue?,y/n)) return
-  var %o = $sfile($replace($nopath(%f),.log,.txt),Please select destination file,Create)
-  if (%o) write -c $cit(%o)
-  if ($exists(%f)) && ($exists(%o)) {
-    dialog -md exportlog exportlog
-    if ($file(%f).size > 1000000) {
-      showmirc -t
-      var %m = m
-    }
-    var %i = 1, %t = $lines(%f), %tid = $ticks
-    did -ar exportlog 1 Opening files
-    .fopen i $cit(%f)
-    .fopen -no o $cit(%o)
-    while (!$fopen(i).eof) {
-      if ($fread(i)) .fwrite -n o $strip($ifmatch)
-      else .fwrite o $crlf
-      if (9 isin %i) did -ar exportlog 1 Exporting: $round($calc(%i / %t *100),0) $+ %
-      inc %i 1
-    }
-    .fclose i
-    .fclose o
-    n.echo other -atg log export finished in $round($calc(($ticks - %tid)/1000),1) $+ s $par(output: %o)
-    if (%m) showmirc -s
-    dialog -x exportlog
-    .timer 1 0 if ($n.input(Do you want to open $nopath(%o) $+ ?,y/n)) run $cit(%o)
-  }
-  else n.echo other -atg /exportlog: file error
-}
-alias query {
-  if (!$1) return
-  if ($query($1)) { !query $1- | return }
-  !query $1
-  n.query.stats $1 $ial($1).addr
-  if ($2) msg $1-
-}
-alias n.query.stats {
-  w_ncfg query_total $calc($ncfg(query_total) +1)
-  echo $color(info) -tg $1 $npre Query with $1 $par($2)
-  if ($comchan($1,0) > 0) { 
-    var %i = 1
-    while (%i <= $comchan($1,0)) {
-      var %comchans = %comchans $cmode($1,$comchan($1,%i),a) $+ $comchan($1,%i)
-      inc %i
-    }
-    echo $color(info) -tg $1 $npre Common channels: $replace(%comchans,$chr(32),$chr(44) $+ $chr(32)) $par($comchan($1,0))
-  }
-  echo $color(info) -tg $1 $npre Total querys: $ncfg(query_total) $par(~ $+ $avgpd($ncfg(query_total)) per day)
-}
-
-alias checkforupdates {
-  set %nbs_vcheck 10
-  unset %nbs_vcheck_date
-  n.versioncheck
-}
-
-; Redo this, check github for updates
-alias n.versioncheck {
-  if ($ncfg(version_check) == 1) {
-    %file = scripts\temp\v.txt
-    if ($exists(%file)) && ($read(%file,1) > $n.version) .timer 1 30 n.versioncheck2
-    elseif (%nbs_vcheck_date != $date) {
-      if (%nbs_vcheck == 10) {
-        n.download http://version.nbs-irc.net/v.txt
-        .timer 1 30 n.versioncheck2
-        set %nbs_vcheck_date $date
-        unset %nbs_vcheck
-      }
-      else inc %nbs_vcheck 1
-    }
-  }
-}
-alias n.versioncheck2 {
-  var %x = scripts\temp\v.txt
-  if ($read(%x,3) == $md5(nbs)) && ($read(%x,1) isnum) && ($read(%x,1) > $n.version) {
-    echo -ag 
-    n.echo normal -ag A newer version of nbs-irc is available.
-    if ($read(%x,2)) n.echo info -ag $ifmatch
-    echo -ag 
-  }
-  else .remove %x
-}
-
-alias n.netsplitquit {
-  var %i = 1
-  while (%i <= $chan(0)) {
-    if ($hget(temp,netsplit.tq. [ $+ [ $cid ] $+ ] . [ $+ [ $chan(%i) ] ]) > 0) {
-      if ($hget(temp,netsplit.quit.f. [ $+ [ $cid ] $+ ] . [ $+ [ $chan(%i) ] ]) != 1) {
-        hadd -m temp nstemp $hget(temp,netsplit.quit. [ $+ [ $cid ] $+ ] . [ $+ [ $chan(%i) ] ])
-        n.echo quit -ti4 $chan(%i) Netsplit $par($1 - $2) $numtok($hget(temp,nstemp),44) quits: $left($hget(temp,nstemp),-1)
-      }
-      else {
-        n.echo quit -ti4 $chan(%i) Netsplit $par($1 - $2) $hget(temp,netsplit.tq. [ $+ [ $cid ] $+ ] . [ $+ [ $chan(%i) ] ]) quits
-      }
-    }
-    hdel -w temp netsplit.*. [ $+ [ $cid ] $+ ] . [ $+ [ $chan(%i) ] ]
-    hdel temp nstemp
-    inc %i
-  }
-}
-alias n.netsplitjoin {
-  if ($1) && ($hget(temp,netsplit.tj. [ $+ [ $cid ] $+ ] . [ $+ [ $1 ] ]) > 0) {
-    if ($hget(temp,netsplit.join.f. [ $+ [ $cid ] $+ ] . [ $+ [ $1 ] ]) != 1) {
-      if ($hget(temp,netsplit.join. [ $+ [ $cid ] $+ ] . [ $+ [ $1 ] ])) hadd -m temp nstemp $ifmatch
-      if ($numtok($hget(temp,nstemp),44) > 1) n.echo join -ti4 $1 Join: $left($hget(temp,nstemp),-1) $par($numtok($hget(temp,nstemp),44))
-      else n.echo join -ti4 $1 Join: $left($hget(temp,nstemp),-1) $par($right($address($left($hget(temp,nstemp),-1),1),-3))
-    }
-    else {
-      n.echo join -ti4 $1 Join: $hget(temp,netsplit.tj. [ $+ [ $cid ] $+ ] . [ $+ [ $1 ] ]) nicks have joined $1
-    }
-    hdel -w temp netsplit.*. [ $+ [ $cid ] $+ ] . [ $+ [ $1 ] ]
-    hdel temp nstemp
-  }
-}
-alias kb if ($2) !raw -q KICK $1-2 : $+ $3- $+ $crlf $+ MODE $1 +b $address($2,$ncfg(ban_mask))
-alias bk if ($2) !raw -q MODE $1 -o+b $2 $address($2,$ncfg(ban_mask)) $+ $crlf $+ KICK $1-2 : $+ $3-
-on *:LOGON:*:set %n.connecting. [ $+ [ $cid ] ] 1
-on *:CONNECT:{
-  if ($n.qnet) {
-    if ($ncfg(autoauth) == 1) && ($ncfg(authnick)) && ($ncfg(authpass)) auth
-    if ($ncfg(mode+x) == 1) mode $me +x
-  }
-  elseif ($n.unet) {
-    if ($ncfg(undernet_autoauth) == 1) && ($ncfg(undernet_authnick)) && ($ncfg(undernet_authpass)) auth
-    if ($ncfg(undernet_mode+x) == 1) mode $me +x
-  }
-  if ($status == connected) echo -se $npre $kl:(Network) $network $kl:(Server) $server $par($port)
-  titleupdate
-  if ($ncfg(autojoin) == 1) && ($ncfg(autojoin_disable_ $+ $network) != 1) .timer 1 3 aj
-  cl_showall
-  if (!%n.quakenet) && (!$authedited) && ($n.qnet) {
-    .timer 1 1 if ($n.input(Do you want to configure your QuakeNet settings now?,y/n)) quakenet
-    set %n.quakenet 1
-  }
-  if (!%n.undernet) && (!$ncfg(undernet_authnick)) && ($n.unet) {
-    .timer 1 1 if ($n.input(Do you want to configure your UnderNet settings now?,y/n)) undernet
-    set %n.undernet 1
-  }
-  .timer 1 20 unset %n.connecting. [ $+ [ $cid ] ]
-  hadd -mu59 temp clag.block 1
-  if ($hget(nbs,popup_discon) == 1) n.ptext - $chr(1) $network $+ : Connected $chr(1) $npre Connected to $+($server,$clr(info,:),$port)
-  if ($cid == 1) n.versioncheck
-}
-on *:DISCONNECT:{
-  cuptime
-  hdel -w nbs ci. [ $+ [ $cid ] $+ ] .*
-  .timerwho. [ $+ [ $cid ] $+ ] .* off
-  cl_showall
-  titleupdate
-  if ($hget(netsplit)) hdel -w netsplit $cid $+ .*
-  hadd -mu600 temp disconnect. [ $+ [ $cid ] ] $me $address($me,1)
-  if ($hget(nbs,popup_discon) == 1) n.ptext - $chr(1) $network $+ : disconnected $chr(1) $npre Disconnected from $+($server,$clr(info,:),$port)
-}
-alias n.log {
-  var %x = $mid($window($1).logfile,1,-5) $+ log
-  if ($exists(%x)) return %x
-  else return $window($1).logfile
-}
-alias cbinfo if (%n.connecting. [ $+ [ $cid ] ]) haltdef
-on *:ACTIVE:*:if ($activecid != $lactivecid) titleupdate
-alias defbrowserfix {
-  if ($?!="This will change CLASSES_ROOT\htmlfile\shell\open\command in the windows registry. Use only if you are not using IE as your default browser. $crlf $crlf $+ Continue?") {
-    var %newbrowser = $$sfile(c:\*.exe,Choose browser)
-    if (%newbrowser) {
-      write -c temp.reg REGEDIT4
-      write temp.reg [HKEY_CLASSES_ROOT\htmlfile\shell\open\command]
-      write temp.reg @="\" $+ $replace(%newbrowser,\,\\) $+ \""
-      run regedit /s temp.reg
-      .timer 1 2 .remove temp.reg
-      .echo -qg $n.input(Browser changed to: %newbrowser $+ .,info)
-    }
-  }
-}
-alias notifyer {
-  if ($notify($1)) { notify -r $1 }
-  else notify $1
-}
-alias np {
-  if (%tmp.sa.spam != 1) {
-    set -u1 %tmp.sa.spam 1
-    var %x = $n.songannounce
-    if (%x) $iif(c isincs $gettok($chan($active).mode,1,32),$strip(%x),%x)
-  }
-}
-alias n.blscan {
-  if ($1 !ischan) || ($hget(nbs,blacklist) != 1) return
-  if ($me isop $1) || ($me ishop $1) {
-    if ($chan($1).ial) && (!$timer(blscan. [ $+ [ $1 ] ])) {
-      var %i = 1, %e = $lines(config\blacklist.txt), %bl.nicks, %bl.bans, %bl.reasons
-      hadd -m temp blchan $1
-      while (%i <= %e) {
-        if (!$n.bluser($address($me,5))) {
-          hadd -m temp bladdr $gettok($read(config\blacklist.txt,%i),1,44)
-          if ($gettok($read(config\blacklist.txt,%i),2,44)) hadd -m temp blreason $gettok($read(config\blacklist.txt,%i),2-,44)
-          else hadd -m temp blreason Blacklisted
-          if ($ialchan($hget(temp,bladdr),$hget(temp,blchan),0) > 0) {
-            var %in = 1
-            while (%in <= $ialchan($hget(temp,bladdr),$hget(temp,blchan),0)) {
-              var %bl.nicks = $+(%bl.nicks,â,$ialchan($hget(temp,bladdr),$hget(temp,blchan),%in).nick)
-              var %bl.bans = $+(%bl.bans,â,$hget(temp,bladdr))
-              var %bl.reasons = $+(%bl.reasons,â,$hget(temp,blreason))
-              inc %in
-            }
-          }
-        }
-        inc %i  
-      }
-      if ($numtok(%bl.nicks,266) < 6) && ($numtok(%bl.nicks,266) > 0) {
-        var %i = 1, %e = $numtok(%bl.nicks,226)
-        while (%i <= %e) {
-          !raw -q mode $hget(temp,blchan) -o+b $gettok(%bl.nicks,%i,226) $gettok(%bl.bans,%i,226) $+ $crlf $+ KICK $hget(temp,blchan) $gettok(%bl.nicks,%i,226) : $+ $gettok(%bl.reasons,%i,226)
-          inc %i
-        }
-      }
-    }
-    elseif ($nick($1,0) < 150) .timerblscan. [ $+ [ $1 ] ] 1 20 .timer 1 1 n.blscan $1
-  }
-}
-alias n.bluser {
-  if ((!$1) || ($lines(config\blacklist.txt) < 1)) return
-  unset %bltmp
-  var %user = $1, %i = 1, %e = $lines(config\blacklist.txt)
-  while (%i <= %e) {
-    if ($remove($gettok($read(config\blacklist.txt,%i),1,44),$chr(32)) iswm %user) set -u10 %bltmp $read(config\blacklist.txt,%i)
-    inc %i
-  }
-  if (%bltmp) return 1
-}
-alias aj {
-  var %a = config\autojoin- $+ $network $+ .txt
-  if ($lines(%a) == 0) { return }
-  if ($read(%a,1) == #channel1) && ($read(%a,2) == #channel2 key) && (!$read(%a,3)) {
-    n.echo other -stge ignoring autojoin $par(no channels added)
-    return
-  }
-  var %i = 1, %newchans = 0, %end = $lines(%a)
-  while (%i <= %end) {
-    if ($me !ison $gettok($read(%a,%i),1,32)) { 
-      if ($gettok($read(%a,%i),2,32)) { 
-        var %joincpw = %joincpw $gettok($read(%a,%i),1,32) $+ $chr(32)
-        var %joinpwds = %joinpwds $gettok($read(%a,%i),2,32) $+ $chr(32)        
-      }     
-      else var %joinchans = %joinchans $gettok($read(%a,%i),1,32)) $+ $chr(32)
-      inc %newchans
-    }
-    inc %i
-  }
-  if (%newchans > 0) {
-    echo $color(other) -st $npre joining %newchans channel $+ $iif(%newchans > 1,s)
-    if (%joinchans) !join $iif($ncfg(autojoin_minimize) == 1,-n) $replace(%joinchans,$chr(32),$chr(44)) 
-    if (%joincpw) !join $iif($ncfg(autojoin_minimize) == 1,-n) $replace(%joincpw,$chr(32),$chr(44)) $replace(%joinpwds,$chr(32),$chr(44))
-  }
-  else n.echo other -atg already on all channels in autojoin
-}
-alias emode {
-  if ($2) {
-    var %m = $1, %t = $2, %i = 1, %x
-    tokenize 44 $snicks
-    while (%i <= $0) {
-      if ($numtok(%x,32) == $modespl) {
-        mode # %m $+ $str(%t,$numtok(%x,32)) %x
-        dec %i
-        unset %x
-      }
-      else var %x = %x [ $chr(36) $+ [ %i ] ]
-      inc %i
-    }
-    mode # %m $+ $str(%t,$numtok(%x,32)) %x
-  }
-}
-alias ci {
-  if (!$1) return
-  return $round($calc($calc($calc($ticks - $hget(temp,ci. [ $+ [ $cid ] $+ ] . [ $+ [ $1 ] ])) / 1000) / 60),0)
-}
-on *:INPUT:@psyBNC (*):{
-  if (($left($1,1) == /) && (!$ctrlenter)) { return }  
-  .!msg -psybnc $1-
-  echo $color(notice) -at - $1-
-}
-on *:INPUT:@sBNC (*):{
-  if (($left($1,1) == /) && (!$ctrlenter)) { return }  
-  .!msg -sBNC $1-
-  echo $color(notice) -at - $1-
-}
-alias ci-check {
-  if ($ncfg(cic-time) < 1) return
-  if ($scon(0) == 1) { 
-    if ($status == connected) {
-      var %i = 1
-      while (%i <= $chan(0)) {
-        if (($ci($chan(%i)) >= $ncfg(cic-time)) && ($nohide($chan(%i)) != 1)) { if (($window($chan(%i)).state != hidden) && ($chan(%i) != $active)) window -h $chan(%i) }
-        inc %i
-      }
-    }
-  }
-  elseif ($scon(0) > 1) {
-    set %ii 1
-    while (%ii <= $scon(0)) {
-      scon -t1 %ii
-      if ($status == connected) {      
-        set %i 1
-        while (%i <= $chan(0)) {
-          if (($ci($chan(%i)) >= $ncfg(cic-time)) && ($nohide($chan(%i)) != 1)) { if (($window($chan(%i)).state != hidden) && ($chan(%i) != $active)) window -h $chan(%i) }
-          inc %i
-        }
-      }
-      scon -r
-      inc %ii    
-    }
-  }
-}
-alias psljud { splay $+(",$mircdirscripts\qry.wav,") } 
-alias n.songannounce {
-  %wa.in = $ncfg(mp3s)
-  if ($ncfg(itunes) == 1) {
-    n.getitunes
-    if (%it.title) {
-      if ([type] isin %wa.in) var %type = $lower($replace(%it.type,mpeg audio file,mp3))
-      var %wa.out = $replace(%wa.in,[mp3],%it.artist - %it.title,[artist],%it.artist,[title],%it.title,[album],%it.album,[time],$dur2(%it.ttime),[etime],$dur2(%it.etime),[kbps],%it.bitrate kbps,[type],%type)
-      unset %it.*    
-    }
-    else n.echo other -atg iTunes is not running, stopped or other error.
-  }
-  else {
-    if ($swamp(trackfilename) == $!null) || (!$swamp(trackfilename)) { n.echo other -atg Error: Winamp is not running/stopped | return }
-    if ([stopped] isin $dll(scripts\dll\winamp.dll,song,_)) { n.echo other -atg Error: Winamp must not be stopped | return }
-    if ([paused] isin $dll(scripts\dll\winamp.dll,song,_)) { n.echo other -atg Error: Winamp must not be paused | return }
-    var %x = $swamp(trackfilename), %wa.old = $removecs($dll(scripts\dll\winamp.dll,song,_),[paused],[stopped])
-    if ([size] isin %wa.in) var %wa.size = $round($calc($file(%x).size /1024/1024),2) MB
-    if ([filename] isin %wa.in) var %wa.file = $nopath(%x)
-    if ([path] isin %wa.in) var %wa.path = $nofile(%x)
-    if ([folder] isin %wa.in) var %wa.folder = $gettok(%x,-2,92)
-    if ([artist] isin %wa.in) var %wa.artist = $qwa(artist)
-    if ([title] isin %wa.in) var %wa.title = $qwa(title)
-    if ([type] isin %wa.in) var %wa.type = $iif(/ isin $gettok(%x,-1,46),stream,$gettok(%x,-1,46)))
-    if ([kbps] isin %wa.in) var %wa.bitrate = $swamp(bitrate)
-    if ([album] isin %wa.in) var %wa.album  = $qwa(album)
-    var %wa.out = $replace(%wa.in,âbåld,,âcålår,,âånderlajn,,âcläör,,[random],$read(config\mp3.txt), $& 
-      [artist],%wa.artist,[title],%wa.title,[mp3],%wa.old,[type],%wa.type,[etime],$dll(scripts\dll\winamp.dll,position,_), $&
-      [time],$replace($dll(scripts\dll\winamp.dll,songlength,_),00:-1,stream),[folder],%wa.folder, $& 
-      [kbps],%wa.bitrate kbps,[album],%wa.album,[size],%wa.size,[filename],%wa.file,[path],%wa.path)
-    if ($hget(nbs,mp3serv) == 1) { hadd -u300 temp mp3serv.file $cit(%x) | unset %mp3serv.* }
-  }
-  return $replacecs(%wa.out,$false,none)
-}
-alias modent {
-  var %cmodes
-  if (N isincs $chanmodes) var %cmodes = C
-  if (C isincs $chanmodes) var %cmodes = %cmodes $+ N
-  .timer 1 10 if ($nick(%jkanal,0) == 1) mode %jkanal +nt $+ %cmodes
-}
-alias n.blscanall {
-  if ($status != connected) || ($chan(0) == 0) || ($ncfg(blacklist) != 1) return
-  var %i = 1
-  while (%i <= $chan(0)) {
-    if (($me isop $chan(%i)) || ($me ishop $chan(%i))) && (($hget(nbs,blacklist_custom_channels) != 1) || ($istok($hget(nbs,blacklist_channels),$chan(%i),32))) { .timerbls. [ $+ [ $cid ] $+ ] . [ $+ [ $chan(%i) ] ] 1 [ %i ] n.blscan $chan(%i) }
-    inc %i
-  }
-}
-alias n.start.echo {
-  echo $color(info) -s - $clr(normal,$strip($n.name $n.version)) $iif($insttime > 86400,installed for $clr(normal, $+ $dur($insttime,2))) using theme $clr(normal,$tname)
-  echo $color(info) -s - $clr(normal,Ctrl+F1:) Commands $+ , $clr(normal,F2:) configuration
-  if ($lines(scripts\txt\tips.txt) > 0) {
-    echo -s $chr(160)
-    echo -s - tip: $read(scripts\txt\tips.txt)
-  }
-  titleupdate
-}
-alias leet { say $replace($1-,a,4,e,3,i,1,s,5,g,6,t,7,o,00,ä,'a',ö,'o') }
-alias mp3 np
-alias who {
-  set %n.whosvar 1
-  !who $1-
-}
-alias names {
-  set %show.names 1
-  !names $1-
-}
-alias n.getitunes {
-  .comopen itunes iTunes.application
-  if (!$comerr) {
-    .echo -qg $com(itunes,PlayerState,3)
-    if ($com(itunes).result == 1) {
-      .echo -qg $com(itunes,CurrentTrack,3,dispatch* itrack)
-      .echo -qg $com(itunes,CurrentStreamTitle,3)
-      .echo -qg $com(itrack,Name,3)
-      set %it.title $com(itrack).result
-      .echo -qg $com(itrack,Artist,3)
-      set %it.artist $com(itrack).result
-      .echo -qg $com(itrack,Album,3)
-      set %it.album $com(itrack).result
-      .echo -qg $com(itrack,BitRate,3)
-      set %it.bitrate $com(itrack).result
-      .echo -qg $com(itrack,Duration,3)
-      set %it.ttime $com(itrack).result
-      .echo -qg $com(itunes,PlayerPosition,3)
-      set %it.etime $com(itunes).result
-      .echo -qg $com(itrack,KindAsString,3)
-      set %it.type $com(itrack).result
-    }
-  }
-  if ($com(itrack)) .comclose itrack
-  if ($com(itunes)) .comclose itunes
-}
-
-alias n.alarm_action {
-  if (%alarm.beep == 1) beep 10 100
-  elseif ($isfile(%alarm.sound)) splay %alarm.sound
-  echo $color(info) -st $npre Alarm finished $iif(%alarm.message == 1,$par($ncfg(alarm_message)))
-  if (%alarm.message) n.ptext - $chr(1) Alarm $chr(1) $ncfg(alarm_message)
-  if (%alarm.program.on == 1) run -p $ncfg(alarm_program)
-}
-alias dns {
-  if (!$1) { dns | return }
-  echo $color(other) -atq $npre Looking up $n.quote($1)
-  .!dns $1-
-}
-alias fasttitle {
-  if ($appstate == tray) !flash $strip($remove($1-,$,%,|))
-  else !dll scripts\dll\aircdll.dll SetMircTitle $strip($eval($1-,1))
-  .!timertitlebar off
-}
-alias n.history { 
-  if ($read($1,w,$2-)) { 
-    write -dl $+ $readn $1
-  }
-  write -il0 $1-
-  while ($lines($1) > 20) {
-    write -dl $+ $lines($1) $1
-  }
-}
-alias idle {
-  if (!$isid) && ($1) {
-    set -u5 %whois.idle 1
-    !whois $1 $1
-  }
-}
-alias titleupdate {
-  if ($appstate != minimized) && ($appstate != tray) {
-    if (!$timer(titlebar)) .timertitlebar -i 0 10 titleupdate
-    if ($status == connected) { 
-      if (!$hget(temp,clag.block)) && ($hget(nbs,check_lag) == 1) {
-        hadd -mu29 temp clag.block 1
-        .notice $me lag437289 $ticks
-      }
-      if ($dialog(tb)) {
-        did -ac tb 1 $+($network,:) $+($server,:,$port)
-        var %lag = $iif(%lag. [ $+ [ $cid ] ],$ifmatch ms, --)
-        if ($away) { did -ar tb 2 connected: $dur($uptime(server,3),2) $+ $iif($hget(nbs,check_lag) == 1,$c44 lag: %lag) $+ , away: $dur($awaytime,2) ( $+ $awaymsg $+ ) }
-        elseif ($idle > 60) { did -ac tb 2 idle: $dur($idle,2) $+ , connected: $dur($uptime(server,3),2) $+ $iif($hget(nbs,check_lag) == 1,$c44 lag: %lag) }
-        else { did -ac tb 2 connected: $dur($uptime(server,3),2) $+ $iif($hget(nbs,check_lag) == 1,$c44 lag: %lag) }
-      }
-    }
-    elseif ($dialog(tb)) { 
-      did -ac tb 1 nbs-irc $n.version - nbs-irc.net
-      did -ac tb 2 Use F2 to configure nbs-irc
-    }
-  }
-  .titlebar $iif($hget(nbs,titlebar_version) == 1,$version - $strip($n.name $n.version)) $iif($hget(nbs,titlebar_lag) == 1, $iif(%lag. [ $+ [ $cid ] ],- $ifmatch ms))
-  if ($time(H) == 23) && ($time(n) == 59) .timerdaychange -o 0:00 1 0 scon -at1 n.daychange
-  if ($ncfg(ci-check) == 1) { 
-    if (%cicheck > 6) {
-      set %cicheck 0
-      ci-check
-    }
-    else inc %cicheck 1
-  }
-}
-alias n.daychange {
-  if ($ncfg(show_daychanged) == 1) {
-    var %i = 1, %msg = Day changed to $day $par($date(d mmm yyyy)) 
-    while (%i <= $chan(0)) {
-      n.echo info -t $chan(%i) %msg
-      inc %i
-    }
-    var %i = 1
-    while (%i <= $query(0)) {
-      n.echo info -t $query(%i) %msg
-      inc %i
-    }
-    n.echo info -st %msg
-  }
-}
-alias clag {
-  set %lc 1
-  .notice $me lag437289 $ticks
-}
-;L
-alias -l n.checkscript {
-  if (!$script($1-)) {
-    if ($exists(scripts\ $+ $1-)) .load -rs scripts\ $+ $1-
-    else { echo 4 -atg * Script file $1- does not exist, replace file or reinstall nbs-irc. }
-  }
-}
-alias -l n.checkalias {
-  if (!$alias($1-)) {
-    if ($exists(scripts\ $+ $1-)) .load -a scripts\ $+ $1-
-    else { echo 4 -atg * Alias file $1- does not exist, replace file or reinstall nbs-irc. }
-  }
-}
-alias rcon_win {
-  if (!%rcon.port) return
-  if (!$window(@rcon)) dlg rcon_pass
-  else n.echo info -atgOnly one rcon connection supported, please close the existing rcon window.
-}
-
-on *:udpread:rcon:{
-  if ($sockerr > 0) return
-  :nextread
-  sockread -f %rcon
-  if ($sockbr == 0) return
-  if (challenge rcon isin %rcon) { 
-    .timerrcon off
-    set %rcon.id $gettok(%rcon,3,32)
-    window -ek0d @rcon nbs.ico
-    titlebar @rcon $+([,%rcon.ip,:,%rcon.port,])
-    echo -t @rcon $npre connected to $+(%rcon.ip,:,%rcon.port)
-  }
-  if (!%rcon) { goto end }
-  if ($left($remove(%rcon,ÿÿÿÿ),1) == l) var %rcon.svar = $right($remove(%rcon,ÿÿÿÿ),-1)
-  else var %rcon.svar = $remove(%rcon,ÿÿÿÿ)
-  echo -t @rcon <- %rcon.svar
-  :end
-  goto nextread
-}
-On *:INPUT:@rcon:{
-  echo -t @rcon -> $1-
-  rcon_cmd $1-
-  haltdef
-}
-alias rcon_cmd if ($1) sockudp -k rcon 5000 %rcon.ip %rcon.port ÿÿÿÿ $+ rcon %rcon.id %rcon.pass $1- $+ $lf
-On *:CLOSE:@rcon:{
-  sockclose rcon*
-  unset %rcon.*
-}
-alias awaysys {
-  if ($away) n.echo normal -atg you are already marked away: $awaymsg
-  else dlg way
-}
-alias lame power $1-
-alias power {
-  var %i = 1, %op = 0, %s = 0, %alla = 0
-  while (%i <= $chan(0)) {
-    if ($me isop $chan(%i)) {
-      inc %op 1 
-      inc %s $nick($chan(%i),0)
-    }
-    inc %alla $nick($chan(%i),0)
-    inc %i 1
-  }
-  $iif($1 == -e,echo -agt $npre you are,me is) oped in $+(%op,/,$chan(0)) channels on $+($network,.) (in control of $+(%s,/,%alla) people)
-}
-
-alias host2nick {
-  if ($1) {
-    set %dns2nick.host $1
-    echo $color(other) -atg $npre Searching for user(s) with host: %dns2nick.host
-    who %dns2nick.host
-  }
-  else n.echo other -atg Usage: /host2nick <hostname>
-}
-alias dns2nick host2nick $1-
-alias ip2nick {
-  if ($1) {
-    set %tmp.i2n 1
-    dns $1
-  }
-  else n.echo other -atg Usage: /ip2nick <ip>
-}
-alias mp3send {
-  if ($1) && (http://* !iswm $swamp(trackfilename)) dc $+ $chr(99) $chr(115) $+ e $+ $chr(110) $+ d $1 $swamp(trackfilename)
-  else n.echo info -atg Usage: /sendsong <nick>
-}
-alias n.mdx dll $cit(scripts\dll\mdx\mdx.dll) $1-
-alias n.mdxv return scripts\dll\mdx\views.mdx
-alias ncfg {
-  if ($1) && ($hget(nbs,$1)) return $ifmatch
-}
-alias w_ncfg { 
-  if ($2) {
-    hadd -m nbs $1-
-    .writeini config\config.ini nbs-irc $1-
-  }
-}
-alias ncfgc {
-  if (!$readini(config\config.ini,nbs-irc,$1)) writeini config\config.ini nbs-irc $1-
-}
-alias n.reloadconfig {
-  if ($hget(nbs)) hfree nbs
-  hmake nbs 20
-  hload -i nbs config\config.ini nbs-irc
-}
-alias n.highlight {
-  if (!$1) return
-  if ($ncfg(no_highlight) != off) && ($numtok($ncfg(no_highlight),44) > 0) {
-    var %i = 1, %e = $numtok($ncfg(no_highlight),44)
-    while (%i <= %e) {
-      if ($gettok($ncfg(no_highlight),%i,44) iswm $address($nick,5)) return
-      inc %i
-    }
-  }
-  window -g2 #
-  if ($hget(nbs,nickpip) == 1) && ((!%tmp.nbf) || (%tmp.nbf < 2)) {
-    splay $qt($mircdirscripts\beep.wav)
-    inc -u10 %tmp.nbf
-  }
-  if ($hget(nbs,nickwin) == 1) {
-    if (!window(@highlights ( $+ $cid $+ )))  window -k0n @highlights ( $+ $cid $+ )
-    var %echo = @highlights ( $+ $cid $+ )
-  }
-  else var %echo = -s
-  echo $color(other) %echo _________________________________________________
-  echo %echo $timestamp $replace($nick.style,<mode>,$cmode($nick,$chan,o),<nick>,$nick) $+  $replace($1-,$me, $+ $me $+ )
-  echo %echo $kl(#) - $kl($date)
-  echo $color(other) %echo ¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
-  if ($hget(nbs,popup_nick) == 1) n.ptext # $chr(1) Highlighted in # $chr(1) $replace($nick.style,<mode>,$cmode($nick,$chan,o),<nick>,$nick) $+  $1-
-}
-alias n.rejoin if ($me !ison $1) join -n $1-
-alias ad { me is using $strip($n.name) $n.version (theme: $tname $+ ) - www.nbs-irc.net }
-ctcp ^*:*:*:{
-  if ($1 == dcc) {
-    if ($hget(nbs,popup_dcc) == 1) n.ptext - $chr(1) DCC from $nick $chr(1) $npre $eval($strip($3),1) ( $+ $round($calc($6 /1024/1024),2) MB)
-    .write $cit($logdir $+ -dcc.log) $date $time - Send from $nick $+ : $3 ( $+ $round($calc($6 /1024/1024),2) MB)
-    if (!$appactive) && ($ncfg(dcc_sound) == 1) splay $qt($mircdirscripts\beep.wav)
-  }
-  elseif ($1 != sound) {
-    haltdef
-    if (%tmp.ctcp > 4) {
-      .ignore -tu60 *!*@*
-      n.echo ctcp -stge CTCP protection: ignoring CTCPs for 60 seconds
-      return
-    }
-    inc -u15 %tmp.ctcp 1
-    if ($1 == ping) {
-      if ((%tmp.ctcp < 4) || (!%tmp.ctcp)) .ctcpreply $nick PING $2-
-      n.echo ctcp -stme $kl(CTCP/PING) from $nick $par($address) $iif(%tmp.ctcp > 3,$par(Ignored))
-      if ($hget(nbs,popup_other) == 1) n.ptext - $chr(1) CTCP $chr(1) $npre CTCP/PING) from $nick
-
-    }
-    elseif ($1 == version) {
-      if ($nick isin %ctcp.ignore) { echo $color(ctcp) -stm $npre  $+ $kl(CTCP/VERSION) from $nick $par($address) $par(Ignored) | return }
-      if ((%tmp.ctcp < 4) || (!%tmp.ctcp)) .ctcpreply $nick VERSION $strip($n.name $n.version) - $strip(www.nbs-irc.net) 
-      n.echo ctcp -stme $kl(CTCP/VERSION) from $nick $par($address) $iif(%tmp.ctcp > 3,$par(Ignored))
-      if ($hget(nbs,popup_other) == 1) n.ptext - $chr(1) CTCP $chr(1) $npre CTCP/VERSION) from $nick
-    }
-    else n.echo ctcp -stme $kl(CTCP/ $+ $1 $+ ) from $nick $par($address) $iif(%tmp.ctcp > 3,$par(Ignored))
-    if ($hget(nbs,popup_other) == 1) n.ptext - $chr(1) CTCP $chr(1) $npre CTCP/ $+ $eval($1,1) from $nick
-  }
-}
-alias n.capss {
-  if ($len($3-) > 9) {
-    if ($calc(100- $len($removecs($strip($3-),A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V,W,X,Y,Z,Å,Ä,Ö,Ü,Ë,É,Ø)) / $len($strip($3-)) *100) >= $hget(prot,$+($1,caps.maxpercent))) {
-      kick $1-2 $iif($hget(prot,$+($1,caps.kickmsg)),$ifmatch,excess caps)
-    }
-  }
-}
-alias n.floods {
-  hadd -m temp flood $dll(scripts\dll\aircdll.dll, Flood, $+($1,$chr(44),$wildsite) 1 $hget(prot,$+($1,flood.lines)) $hget(prot,$+($1,flood.seconds)))
-  if (+FLOOD* iswm $hget(temp,flood)) { 
-    if ($hget(prot,$+($1,flood.ban)) == 1) ban $iif($hget(prot,$+($1,bantime)) isnum 1-,-u $+ $calc($ifmatch *60)) $1-2 $ncfg(ban_mask)
-    kick $1-2 $iif($hget(prot,$+($1,flood.kickmsg)),$ifmatch,no flooding)
-  }
-}
-alias n.repeats {  
-  hinc -mu10 temp $+($1,$2,$strip($3-)) 1
-  if ($hget(temp,$+($1,$2, $strip($3-))) >= $hget(prot,$+($1,repeat.max))) {
-    hdel temp $+($1,$2,$strip($3-))
-    if ($hget(prot,$+($1,repeat.ban)) == 1) ban $iif($hget(prot,$+($1,bantime)) isnum 1-,-u $+ $calc($ifmatch *60)) $1-2 $ncfg(ban_mask)
-    kick $1-2 $iif($hget(prot,$+($1,repeat.kickmsg)),$ifmatch,no repeating)
-  }
-}
-alias n.spams {
-  if ($hget(prot,$+($1,advertising.type)) == 1) && (*#?* iswm $3-) {
-    if ($hget(prot,$+($1,advertising.ban)) == 1) ban $iif($hget(prot,$+($1,bantime)) isnum 1-,-u $+ $calc($ifmatch *60)) $1-2 $ncfg(ban_mask)
-    kick $1-2 $iif($hget(prot,$+($1,advertising.kickmsg)),$ifmatch,no advertising)
-  }
-  elseif ($hget(prot,$+($1,advertising.type)) == 1) && (*join*#?* iswm $3-) || */j*#?* iswm $3-) {
-    if ($hget(prot,$+($1,advertising.ban)) == 1) ban $iif($hget(prot,$+($1,bantime)) isnum 1-,-u $+ $calc($ifmatch *60)) $1-2 $ncfg(ban_mask)
-    kick $1-2 $iif($hget(prot,$+($1,advertising.kickmsg)),$ifmatch,no advertising)
-  }
-}
-alias clonescan {
-  if (!$1) var %ch = $active
-  else var %ch = $1
-  if (%ch !ischan) { echo $color(info) -atg $npre Usage: /clonescan [#channel] | return }
-  if ($me !ison %ch) return
-  var %i = 1, %w, %b
-  if (!$chan(%ch).ial) {
-    if ($nick(%ch,0) > 350) {
-      var %b = $n.input(This is a very large channel $+ $c44 scanning it might result in being disconnected. Do you want to scan it anyway?,y/n)
-      if (%b) {
-        echo $color(info) -agt $npre updating ial for %ch $+ , please wait.
-        set %csial %ch
-        !who %ch
-        return
-      }
-    }
-    else {
-      echo $color(info) -agt $npre updating ial for %ch $+ , please wait.
-      set %csial %ch
-      !who %ch
-      return
-    }
-  }
-  if ($hget(clones)) hfree clones
-  hmake clones 1
-  var %antal = $nick(%ch,0), %antalk
-  while (%i <= %antal) {
-    var %w = $address($nick(%ch,%i),2)
-    if ($nick(%ch,%i)) hadd clones %w $hget(clones,%w) $clr(inf,$cmode($nick(%ch,%i),%ch,a)) $+ $nick(%ch,%i)
-    inc %i
-  }
-  window -nk0 @clones
-  echo @clones $chr(160)  
-  echo @clones $chr(160)
-  echo @clones Clones in %ch $+ :
-  echo @clones $chr(160)
-  var %i = 1
-  while (%i <= %antal) {
-    var %k = 1
-    if ($numtok($hget(clones,%i).data,32) > 1) {
-      var %k = $ifmatch, %w = $hget(clones,%i).data
-      echo -i2 @clones $kl($hget(clones,%i).item)
-      echo -i2 @clones $chr(160) %k $+ : $replace(%w,$chr(32),$str($chr(160),3))
-      echo @clones $chr(160)
-      inc %antalk %k
-    }
-    inc %i
-  }
-  var %unik = $calc(%antal - %antalk)
-  echo @clones $npre Unique hosts: %unik $+ / $+ %antal $par($perc(%unik,%antal))
-  window -a @clones
-  hfree clones
-  unset %csial
-}
+; Vote stuff, todo to be removed
 alias vote {
   if (%vote) { n.echo info -atg there is already an vote in progress | return }
   if (!$server) { n.echo info -atg not connected | return }
@@ -1150,194 +47,7 @@ alias dlg {
   if (!$1) return
   if (!$dialog($1)) dialog -m $1 $1
 }
-alias theme {
-  if ($1) {
-    if ($1 == -r) {
-      set %poaksdfopka 1
-      byt-tema $left($nopath($isalias(tname).fname),-4)
-    }
-    else byt-tema $1-
-  }
-  else dlg tema
-}
-alias g-join {
-  if ($1) set %hlip $1
-  dlg gl
-}
-alias sendcb {
-  if (!$1) { n.echo info -atg Usage /sendcb <nick> [filename] | return }
-  if (!$cb) { n.echo info -atg No text in clipboard | return }
-  if (!$2) { var %c = 1, %r = $r(a,z) $+ $r(a,z) $+ $r(a,z) $+ $r(a,z) $+ $r(a,z)
-    while (%c <= $cb(0)) {
-      write clip- $+ %r $+ .txt $cb(%c)
-      inc %c
-    }
-    dcc send $1 clip- $+ %r $+ .txt
-    .timer 1 60 .remove clips- $+ %r $+ .txt
-  }
-  if ($2) { 
-    var %c = 1
-    while (%c <= $cb(0)) {
-      write $2 $+ .txt $cb(%c)
-      inc %c
-    }
-    dcc send $1 $2 $+ .txt
-    .timer 1 60 .remove $2 $+ .txt
-  }
-}
-alias n.bnc {
-  if (!$window($bncwin($1,$cid))) {
-    window -k0ne $bncwin($1,$cid)
-    echo -te $bncwin($1,$cid) $npre $1 window, right click for options.
-  }
-  else window -g1 $bncwin($1,$cid)
-  if ($2) {
-    .!msg - $+ $1-
-    echo $color(notice) -t $bncwin($1,$cid) - $2-
-  }
-}
-alias nickserv_ghost {
-  if ($lines(config\nickserv- $+ $network $+ .txt) > 0) {
-    var %a = $read(config\nickserv- $+ $network $+ .txt), %k = $calc($len($gettok(%a,2-,44)) +1), %i = 1
-    while (%k > 1) {
-      var %k = $calc(%k -3), %r = %r $+ $chr($calc($mid($gettok(%a,2-,44),%k,3) + %i))
-      inc %i 1
-    }
-    set %tmp.ghost $gettok(%a,1,44)
-    nickserv ghost $gettok(%a,1,44) %r
-  }
-}
-on ^*:snotice:*:{
-  haltdef
 
-  var %timestamp = $iif($msgstamp, $msgstamp, $ctime)
-  
-  if ($nick == irc.psychoid.net) { 
-    n.bnc psyBNC
-    echo -tm $bncwin(psyBNC,$cid) - $1-
-  }
-  elseif ($nick == shroudbnc.info) set %sbnc. [ $+ [ $cid ] ] 1
-  else echo $color(notice) -sq $asctime(%timestamp, $n.timestamp) $npre $par($nick) $1-
-}
-
-on ^*:notice:*:*:{
-  haltdef
-
-  var %timestamp = $iif($msgstamp, $msgstamp, $ctime)
-  
-  if ($target ischan) {
-    echo $color(notice) -gm $target $asctime(%timestamp, $n.timestamp) $pre $par($+($cmode($nick,$target),:,$target)) $1-
-    if ($chr(1) $+ # isin $hget(prot,chans)) && ($me isop $target) || ($me ishop $target) {
-      if (($nick isop #) || ($nick ishop #)) && (!$hget(prot,$+(#,punishops))) return
-      if ($hget(prot,$+(#,caps)) == 1) n.capss $target $nick $1-
-      if ($hget(prot,$+(#,repeat)) == 1) n.repeats $target $nick $1-
-      if ($hget(prot,$+(#,flood)) == 1) n.floods $target $nick $1-
-      if ($hget(prot,$+(#,advertising)) == 1) n.spams $target $nick $1-
-    }
-  }
-  elseif ($address === psyBNC@lam3rz.de) && ($nick === Welcome) || ($nick === Wilkommen) set %psybnc. [ $+ [ $cid ] ] 1
-  elseif ($nick == -psyBNC) {
-    n.bnc psyBNC
-    echo -tmi4 $bncwin(psybnc,$cid) - $1-
-  }
-  elseif ($nick == -sBNC) {  
-    n.bnc sBNC
-    echo -tmi4 $bncwin(sBNC,$cid) - $1-
-  }
-  elseif ($nick == $me) && ($1 == lag437289) { 
-    set %lag. $+ $cid $calc($ticks - $2) 
-    if (%lc == 1) n.echo other -atg latency to $server $+ : %lag. [ $+ [ $cid ] ] ms
-    unset %lc
-    titleupdate
-  }
-  elseif ($n.qnet) && ($len($nick) == 1) {
-    if ($dialog(botctrl)) && (%bc.getmode) {
-      if ($1-7 == chanlev is only available to authed users.) {
-        did -ar botctrl 99 You are not authed 
-        did -b botctrl 98,8 
-      }
-      if ($1-2 == Can't find) || ($3- ==  is not authed.) {
-        did -ar botctrl 99 (not authed) 
-        did -b botctrl 98,8 
-      }
-      elseif ($1-6 == user %bc.nick is not known on) did -ar botctrl 99 (none)
-      elseif (flags for %bc.nick on isin $1-) did -ar botctrl 99 $6
-      elseif (!$3) && ($2) did -ar botctrl 99 + $+ $2
-      did -c botctrl 99 1
-    }
-    elseif ($1 == CHALLENGE) && ($nick === Q) {
-      if (LEGACY-MD5 isin $3-) {
-        var %k = $calc($len($ncfg(authpass)) +1), %i = 1
-        while (%k > 1) {
-          var %k = $calc(%k -3), %r = %r $+ $chr($calc($mid($ncfg(authpass),%k,3) + %i))
-          inc %i 1
-        }
-        n.echo notice -agqt received key, sending auth.
-        .msg q@cserve.quakenet.org challengeauth $ncfg(authnick) $md5($left(%r,10) $2) LEGACY-MD5
-      }
-      else n.echo info -atg Error: LEGACY-MD5 seems to be removed, disable challengeauth to auth.
-    }
-    elseif ($mid($1,2,-1) ischan) n.echo notice -t $mid($1,2,-1) $kl($nick) $1- 
-    else n.echo notice -atgi4 $kl:($nick) $1-
-  }
-  elseif ($n.unet) && ($nick == x) {
-    if ($mid($1,2,-1) ischan) n.echo notice -t $mid($1,2,-1) $kl($nick) $1- 
-    else n.echo notice -agi4 $asctime(%timestamp, $n.timestamp) $npre $kl:($nick) $1-
-  }
-  elseif ($nick === ChanServ) && ($mid($1,2,-1) ischan) n.echo notice -t $mid($1,2,-1) $kl($nick) $1-
-  elseif ($1-2 === DCC Send) && ($3) {
-    n.echo notice -sei4 $asctime(%timestamp, $n.timestamp) $npre $kl:(DCC Send from $nick) $deltok($3-,-1,32) $par($mid($gettok($3-,-1,32),2,-1))
-  }
-  else {
-    n.echo notice -ami4 $asctime(%timestamp, $n.timestamp) $npre $kl:(notice from $nick) $1-
-  }
-  if ($nick === NickServ) && ($ncfg(nickserv_on) == 1) {
-    if (nickname is registered isin $1-) && ($exists(config\nickserv- $+ $network $+ .txt)) {
-      var %a = $read(config\nickserv- $+ $network $+ .txt)
-      if ($me == $gettok(%a,1,44)) {
-        var %k = $calc($len($gettok(%a,2-,44)) +1), %i = 1
-        while (%k > 1) {
-          var %k = $calc(%k -3), %r = %r $+ $chr($calc($mid($gettok(%a,2-,44),%k,3) + %i))
-          inc %i 1
-        }
-        $ncfg(nickserv_prefix) %r
-      }
-    }
-    elseif (ghost with your nick has been killed isin $1-) nick %tmp.ghost
-  }
-}
-alias back if ($away) dlg back
-on *:APPACTIVE:titleupdate
-on ^*:CLOSE:@psyBNC (*):if ($window(-psybnc)) close -m -psyBNC
-on ^*:CLOSE:@sBNC (*):if ($window(-sbnc)) close -m -sBNC
-alias echoall {
-  if (!$1) { return }
-  var %i = 1  
-  while (%i <= $chan(0)) {
-    echo -g $chan(%i) $1-
-    inc %i
-  }
-  unset %i 
-}
-alias topicall {
-  var %i = 1 
-  while (%i <= $chan(0)) {
-    if ($chan(%i).topic) echo $color(topic) -tgi4 $chan(%i) - Topic: $chan(%i).topic
-    inc %i
-  }
-  unset %i 
-}
-alias whochan {
-  if (!$1) return
-  var %c = $1
-  if (!%whos) || (%whos > 180) set -u120 %whos 5
-  else inc %whos 10
-  if ($nick(%c,0) < 150) && ($nick(%c,0) > 1) && (!$chan(%c).ial) .timerwho. [ $+ [ $cid ] $+ ] . [ $+ [ %c ] ] 1 [ %whos ] !who %c
-}
-alias topicchan {
-  if (!$1) return
-  if ($chan($1).topic) .write -il1 $+(scripts\temp\topic\,$md5($1),â,$cid) $chan($1).topic
-}
 alias ehide { return $istok($hget(temp,$1),$2,44) }
 alias hideshow.event {
   if ($2) {
@@ -1350,115 +60,6 @@ alias hideshow.event {
 alias n.saveconfig {
   hsave -i nbs config\config.ini nbs-irc
 }
-alias n.updateevents {
-  hadd -m temp joins $ncfg(hide_joins)
-  hadd -m temp parts $ncfg(hide_parts)
-  hadd -m temp quits $ncfg(hide_quits)
-  hadd -m temp nicks $ncfg(hide_nicks)
-}
-alias n.checkini {
-  if ($isdir(txt)) && (!$isdir(config)) .rename txt config
-  if (!$isdir(config)) .mkdir config
-  if (!$isdir(logs)) .mkdir logs
-  if (!$isdir(download)) .mkdir download
-  if (!$isdir(scripts\temp)) .mkdir scripts\temp
-  if (!$isdir(scripts\temp\topic)) .mkdir scripts\temp\topic
-  if (!$exists(config\slaps.txt)) write config\slaps.txt slaps [nick] around a bit with a large trout
-  if (!$exists(config\kor.txt)) write config\kor.txt $+(cmd,$crlf,notepad,$crlf,calc,$crlf,regedit,$crlf,www.nbs-irc.net,$crlf,www.nbs-irc.net/forum,$crlf,www.google.com)
-  if ($exists(config\autojoin.txt)) .rename config\autojoin.txt config\autojoin-QuakeNet.txt
-  if (!$exists(config\autojoin-quakenet.txt)) { write -c config\autojoin-QuakeNet.txt }
-  if (!$exists(config\hl-servers.txt)) { write config\hl-servers.txt 130.243.72.27:27015 }
-  if (!$exists(config\kicks.txt)) { write config\kicks.txt bye }
-  if (!$exists(config\quits.txt)) { write -c config\quits.txt }
-  if (!$exists(config\mp3.txt)) write config\mp3.txt winamp » [mp3] :: [time] $crlf $+ np: [mp3] :: [time]
-  if (!$exists(config\games.txt)) {
-    write config\games.txt CS 1.6 $chr(124) c:\program\steam\steam.exe -applaunch 10 +connect [adr] +password [pass]
-    write config\games.txt CS:Source $chr(124) c:\program\steam\steam.exe -applaunch 240 +connect [adr] +password [pass]
-    write config\games.txt UT2004 $chr(124) C:\UT2004\system\ut2004.exe [adr] [pass]
-    write config\games.txt Call of Duty 2 $chr(124) c:\program\activision\call of duty 2\cod2mp_s.exe +password [pass] +connect [adr]
-  }
-  if (!$exists(config\awaymsg.txt)) write -c config\awaymsg.txt away
-  if (!$exists(config\awaynick.txt)) write -c config\awaynick.txt [nick]\away
-
-  if (!$exists(scripts\ownstuff.mrc)) {
-    .write scripts\ownstuff.mrc $chr(59) you can put your own scripts here, this file will not be overwritten when updating nbs-irc
-    .load -rs1 scripts\ownstuff.mrc
-  }
-  ncfgc installtime $ctime
-  ncfgc whois @whois
-  ncfgc whois_inside 1
-  ncfgc query_show_online 1
-  ncfgc modeprefix 1
-  ncfgc highlight_nick_color 8
-  ncfgc nickwin 1
-  ncfgc ar_time 3
-  ncfgc newcc 1
-  ncfgc exttb 1
-  ncfgc smsg say
-  ncfgc skanaler #chan1 #chan2 (# = all channels)
-  ncfgc mp3s say winamp » [mp3] :: [time]
-  ncfgc mp3getcmd !get $+ $r(1,9)
-  ncfgc authnick nick
-  ncfgc authpass pass
-  ncfgc nickserv_on 1
-  ncfgc nickserv_prefix nickserv identify
-  ncfgc awaynick [nick]\away
-  ncfgc awaymed away
-  ncfgc wapath c:\program\winamp\winamp.exe
-  ncfgc nickpip 1
-  ncfgc nickbar 1
-  ncfgc privpip 1
-  ncfgc privljud psljud
-  ncfgc autojoin_minimize 1
-  ncfgc autorejoin 1
-  ncfgc cic-time 10
-  ncfgc blacklist 1
-  ncfgc dcc_sound 1
-  ncfgc ban_mask 1
-  ncfgc quakenet_bot_autojoin 1
-  ncfgc undernet_bot_autojoin 1
-  ncfgc titlebar_version 1
-  ncfgc reclaim_nick 1
-  ncfgc nicklist_use_themed_colors 1
-  ncfgc use_theme_fonts 1
-  ncfgc version_check 1
-  ncfgc check_lag 1
-  ncfgc no_highlight off
-  ncfgc show_daychanged 1
-  ncfgc fkey_f1 /help  
-  ncfgc fkey_f3 /awaysys
-  ncfgc fkey_f4 /back
-  ncfgc fkey_f5 /lastpop
-  ncfgc fkey_f7 /topic $eval(#,0)
-  ncfgc fkey_f8 /np
-  ncfgc fkey_f9 /logviewer
-  ncfgc fkey_f10 /g-join
-  ncfgc fkey_f11 /blist
-  ncfgc fkey_f12 /aboutnbs
-  ncfgc tb_skin nbs.png
-  ncfgc popup_query_always o
-  ncfgc popup_nick 1
-  ncfgc popup_query 1
-  ncfgc popup_discon 1
-  ncfgc popup_dcc 1
-  ncfgc popup_other 1
-  ncfgc popup_mode 2
-  ncfgc popup_timeout 6
-  if ($os == 7) {
-    ncfgc popup_posx -5
-    ncfgc popup_posy -83
-  }
-  else {
-    ncfgc popup_posx -7
-    ncfgc popup_posy -75
-  }
-  ncfgc popup_centerx o
-  ncfgc popup_centery o
-  ncfgc popup_away o
-  ncfgc auto_connect_1_server irc.example.org (Example)
-}
-
-; dialogs
 
 dialog paste {
   title "Paste"
@@ -1511,6 +112,8 @@ on *:dialog:strt:init:0:{
   did -a strt 1 0 0 10
 }
 
+; Control Panel
+alias setup dlg cp
 dialog cp {
   title "Control Panel (/setup)"
   size -1 -1 244 191
@@ -1585,6 +188,8 @@ on *:dialog:cp:dclick:1:{
   elseif (co isin %a) cf1
   elseif (ab isin %a) aboutnbs
 }
+
+; Servicebot control
 alias botcontrol {
   unset %bc.*
   if ($2) set %bc.nick $2
@@ -1647,7 +252,8 @@ on *:dialog:botctrl:sclick:8:{
   }
 }
 
-
+; Notification popups
+alias popups dlg popups
 dialog popups {
   title "Notification popups (/popups)"
   size -1 -1 138 189
@@ -1801,41 +407,6 @@ on *:dialog:popups:sclick:251:{
   else did -e popups 41
 }
 
-dialog rcon_pass {
-  title "Rcon"
-  size -1 -1 83 43
-  option dbu
-  button "OK", 1, 52 32 30 10, default ok
-  edit "", 2, 0 10 82 11, pass
-  check "Save", 3, 1 22 25 10
-  text "Password:", 4, 1 2 31 7
-}
-on *:dialog:rcon_pass:init:0:{
-  if ($ncfg(rcon_password_save) == 1) { 
-    did -c rcon_pass 3
-    if ($ncfg(rcon_password)) did -a rcon_pass 2 $ifmatch
-  }
-  did -f rcon_pass 2
-}
-on *:dialog:rcon_pass:sclick:1:{
-  if ($did(rcon_pass,2).text) {
-    set %rcon.pass $ifmatch
-    if ($did(rcon_pass,3).state == 1) {
-      w_ncfg rcon_password %rcon.pass
-      w_ncfg rcon_password_save 1
-    }
-    else {
-      w_ncfg rcon_password_save o
-      w_ncfg rcon_password å
-    }
-    if (%rcon.pass) {
-      sockudp -k rcon 5000 %rcon.ip %rcon.port ÿÿÿÿ $+ challenge rcon $+ $lf
-      .timerrcon 1 1 sockclose rcon*
-    }
-  }
-}
-
-
 dialog exportlog {
   title "Saving log..."
   icon $scriptdiri.dll,18
@@ -1848,6 +419,56 @@ On *:DIALOG:exportlog:init:0:{
   n.mdx SetMircVersion $version
   n.mdx MarkDialog $dname
   n.mdx SetDialog $dname style dlgframe
+}
+
+; Theme management dialog
+alias theme {
+  if ($1) {
+    if ($1 == -r) {
+      set %poaksdfopka 1
+      byt-tema $left($nopath($isalias(tname).fname),-4)
+    }
+    else byt-tema $1-
+  }
+  else dlg tema
+}
+dialog tema {
+  title "Theme (/theme)"
+  size -1 -1 197 151
+  option dbu
+  icon $scriptdirdll\i.dll, 17
+  icon 2, 1 22 193 105,  $scriptdirtema\blank.png, 0
+  combo 4, 1 9 83 117, sort size drop
+  button "Change", 3, 164 8 30 11
+  button "Edit theme", 12, 1 139 45 11
+  button "Settings", 11, 82 139 37 11
+  button "OK", 5, 120 139 37 11, ok
+  button "Close", 6, 158 139 37 11, cancel
+  text "Theme:", 9, 1 1 25 8
+  text "Font:", 10, 165 1 25 7
+  text "", 13, 2 129 139 9
+  text "", 1, 148 129 45 9, right
+}
+on *:dialog:tema:init:0:{
+  did -ar tema 13 $findfile($scriptdirtema,*.tem,0,1,did -a tema 4 $replace($left($nopath($1-),-4),-,: $chr(32))  ) themes available
+  var %x = $left($nopath($isalias(tname).fname),-4)
+  did -c tema 4 $n.cbgn(tema,4,$replace(%x,-,: $+ $chr(32)))
+  if ($exists($+(",$scriptdirtema\,%x,.bmp,"))) did -g tema 2 $+(",$mircdirscripts\tema\,%x,.bmp,")
+  elseif ($exists($+(",$scriptdirtema\,%x,.png,"))) did -g tema 2 $+(",$mircdirscripts\tema\,%x,.png,")
+  did -a tema 1 $round($calc($file($qt($mircdirscripts\tema\ $+ %x $+ .tem)).size /1024),2) KB
+}
+on *:dialog:tema:sclick:11:dlg tsettings
+on *:dialog:tema:sclick:12:tedit $replace($did(tema,4).seltext,: $+ $chr(32),-)
+on *:dialog:tema:sclick:4:{
+  var %x = $replace($did(tema,4).seltext,: $+ $chr(32),-)
+  if ($exists($+(",$mircdirscripts\tema\,%x,.bmp,"))) did -g tema 2 $+(",$scriptdirtema\,%x,.bmp,")
+  elseif ($exists($+(",$scriptdirtema\,%x,.png,"))) did -g tema 2 $+(",$scriptdirtema\,%x,.png,")
+  else did -g tema 2 $qt($scriptdirtema\blank.png)
+  did -a tema 13 $right($read($qt($scriptdirtema\ $+ %x $+ .tem),1),-1)
+  did -a tema 1 $round($calc($file($qt($scriptdirtema\ $+ %x $+ .tem)).size /1024),2) KB
+}
+on *:dialog:tema:sclick:5:{
+  if ($did(tema,4).seltext) .timer -m 1 300 byt-tema $replace($did(tema,4).seltext,: $+ $chr(32),-)
 }
 dialog tsettings {
   title "Theme settings"
@@ -1979,45 +600,14 @@ on *:dialog:tedit:sclick:11:{
     dialog -x tedit
   }
 }
-dialog tema {
-  title "Theme (/theme)"
-  size -1 -1 197 151
-  option dbu
-  icon $scriptdirdll\i.dll, 17
-  icon 2, 1 22 193 105,  $scriptdirtema\blank.png, 0
-  combo 4, 1 9 83 117, sort size drop
-  button "Change", 3, 164 8 30 11
-  button "Edit theme", 12, 1 139 45 11
-  button "Settings", 11, 82 139 37 11
-  button "OK", 5, 120 139 37 11, ok
-  button "Close", 6, 158 139 37 11, cancel
-  text "Theme:", 9, 1 1 25 8
-  text "Font:", 10, 165 1 25 7
-  text "", 13, 2 129 139 9
-  text "", 1, 148 129 45 9, right
+
+; Font settings dialog
+alias fc {
+  if ($2) {
+    font -z $1-
+  }
+  else dlg font font
 }
-on *:dialog:tema:init:0:{
-  did -ar tema 13 $findfile($scriptdirtema,*.tem,0,1,did -a tema 4 $replace($left($nopath($1-),-4),-,: $chr(32))  ) themes available
-  var %x = $left($nopath($isalias(tname).fname),-4)
-  did -c tema 4 $n.cbgn(tema,4,$replace(%x,-,: $+ $chr(32)))
-  if ($exists($+(",$scriptdirtema\,%x,.bmp,"))) did -g tema 2 $+(",$mircdirscripts\tema\,%x,.bmp,")
-  elseif ($exists($+(",$scriptdirtema\,%x,.png,"))) did -g tema 2 $+(",$mircdirscripts\tema\,%x,.png,")
-  did -a tema 1 $round($calc($file($qt($mircdirscripts\tema\ $+ %x $+ .tem)).size /1024),2) KB
-}
-on *:dialog:tema:sclick:11:dlg tsettings
-on *:dialog:tema:sclick:12:tedit $replace($did(tema,4).seltext,: $+ $chr(32),-)
-on *:dialog:tema:sclick:4:{
-  var %x = $replace($did(tema,4).seltext,: $+ $chr(32),-)
-  if ($exists($+(",$mircdirscripts\tema\,%x,.bmp,"))) did -g tema 2 $+(",$scriptdirtema\,%x,.bmp,")
-  elseif ($exists($+(",$scriptdirtema\,%x,.png,"))) did -g tema 2 $+(",$scriptdirtema\,%x,.png,")
-  else did -g tema 2 $qt($scriptdirtema\blank.png)
-  did -a tema 13 $right($read($qt($scriptdirtema\ $+ %x $+ .tem),1),-1)
-  did -a tema 1 $round($calc($file($qt($scriptdirtema\ $+ %x $+ .tem)).size /1024),2) KB
-}
-on *:dialog:tema:sclick:5:{
-  if ($did(tema,4).seltext) .timer -m 1 300 byt-tema $replace($did(tema,4).seltext,: $+ $chr(32),-)
-}
-on *:dialog:tema:sclick:3:fc
 dialog font {
   title "Font settings (/fc)"
   size -1 -1 103 91
@@ -2033,6 +623,7 @@ dialog font {
   button "Cancel", 6, 72 79 30 11, cancel
   button "Default", 9, 1 79 31 11
 }
+on *:dialog:tema:sclick:3:fc
 on *:dialog:font:init:0:{
   if ($window(status window).font) did -a font 1 $ifmatch
   if ($window(status window).fontbold) did -c font 7
@@ -2062,13 +653,9 @@ on *:dialog:font:sclick:5:{
   else var %p = -z
   font %p $did(4).text $did(1).text
 }
-alias fc {
-  if ($2) {
-    font -z $1-
-  }
-  else dlg font font
-}
 
+; /nq dialog
+alias nq dlg np
 dialog np {
   title "Sound/highlight settings (/nq)"
   size -1 -1 149 119
@@ -2134,6 +721,8 @@ On *:DIALOG:np:sclick:11:{
     did -ar np 10 $remove($ncfg(privljud),splay)
   }
 }
+
+
 dialog way {
   title "Away"
   size -1 -1 115 53
@@ -2425,88 +1014,7 @@ on *:dialog:misc:sclick:5:{
     if ($dialog(tb)) dialog -x tb
   }
 }
-dialog mp3s {
-  title "Song announce (/sa, /np)"
-  size -1 -1 203 165
-  option dbu
-  icon $scriptdirdll\i.dll, 17
-  tab "Winamp/MM", 20, 3 0 197 150
-  box "Serving (max 3 sends)", 12, 8 97 188 32, tab 20
-  box "Usage", 7, 8 51 188 45, tab 20
-  text "", 6, 13 59 79 34, tab 20
-  text "", 10, 94 59 100 34, tab 20
-  check "Send file on request (5 min timeout)", 13, 13 105 98 10, tab 20
-  edit "", 14, 151 105 42 11, tab 20 autohs
-  edit "", 17, 151 116 42 11, tab 20 autohs
-  text "Trigger:", 15, 130 106 21 9, tab 20 right
-  text "Limit upload speed (KB/s, 0 = unlimited): ~", 16, 37 117 114 8, tab 20 right
-  text "* Uses wa_link.dll wich may crash mIRC on some systems", 18, 10 132 145 8, tab 20
-  text "** Does not work with MediaMonkey", 25, 10 140 141 8, tab 20
-  tab "iTunes", 21
-  box "Usage", 19, 8 51 188 39, tab 21
-  text "", 23, 13 59 79 28, tab 21
-  text "", 24, 94 59 100 28, tab 21
-  check "Enable iTunes support instead of Winamp", 22, 9 93 150 10, tab 21
-  button "OK", 3, 163 153 37 11, ok
-  radio "/say", 5, 14 37 24 10
-  radio "/me", 4, 38 37 23 10
-  edit "", 1, 12 24 181 11, autohs
-  button "Edit random", 11, 87 37 37 11
-  button "Default", 9, 125 37 33 11
-  button "Preview", 8, 159 37 33 11
-  box "Display", 2, 8 16 188 35
-}
-On *:dialog:mp3s:init:0:{
-  if ($ncfg(mp3s)) {
-    if ($gettOK($ncfg(mp3s),1,32) == say) { 
-      did -c mp3s 5
-      did -a mp3s 1 $replace($right($ncfg(mp3s),-3),âbåld,,âcålår,,âånderlajn,,âcläör,)
-    }
-    else {
-      did -c mp3s 4
-      did -a mp3s 1 $replace($right($ncfg(mp3s),-2),âbåld,,âcålår,,âånderlajn,,âcläör,)
-    }    
-  }
-  if ($ncfg(mp3getcmd)) did -ar mp3s 14 $ifmatch
-  if ($ncfg(mp3maxcps)) did -ar mp3s 17 $replace($ifmatch,o,0)
-  n.ds cr 13 mp3serv
-  n.ds cr 22 itunes
-  did -a mp3s 6 [artist]*, [title]* and [album]* $crlf $+ [etime] (elapsed time) $crlf $+ [time] (total time) $crlf $+ [kbps] (bitrate, eg: 192 kbps) $crlf $+ [size] (eg: 4.7 MB)
-  did -a mp3s 10 [random] (random line, edit above) $crlf $+ [type] (filetype, eg: mp3) $crlf $+ [filename] (eg: asd.mp3) $crlf $+ [path]/[folder] (eg: c:\music\) $crlf $+ [mp3]** (as shown on winamp's titlebar)
-  did -a mp3s 23 [artist], [title] and [album] $crlf $+ [etime] (elapsed time) $crlf $+ [time] (total time) $crlf $+ [kbps] (bitrate, eg: 192 kbps)
-  did -a mp3s 24 [random] (random line, edit above) $crlf $+ [type] (filetype, eg: mp3) $crlf $+ [mp3] (artist - title)
-  if ($ncfg(itunes) == 1) .timer -m 1 10 did -f mp3s 21
-}
-On *:dialog:mp3s:sclick:11:txt config\mp3.txt
-On *:dialog:mp3s:sclick:9:{
-  did -ar mp3s 1 $iif($ncfg(itunes) == 1,iTunes,winamp) » [mp3] :: [time]
-  did -c mp3s 5
-  did -u mp3s 4
-}
-On *:dialog:mp3s:sclick,edit:8,1:{
-  if ($did(mp3s,1).text) { 
-    var %temp = $did(mp3s,1).text 
-    n.preview mp3s $replace(%temp,[mp3],Artist - Song title,[type],mp3,[artist],Artist,[title],Song title,[album],Album,[time],3:12,[etime],1:54,[kbps],192 kbps,[size],4.7MB,[filename],04-artist-the_song.mp3,[path],$mircdir,[folder],folder name,[random],random line)
-  }
-}
-On *:dialog:mp3s:sclick:22:{
-  n.ds cw 22 itunes
-  if ($did(mp3s,22).state == 1) did -ar mp3s 1 $replace($did(mp3s,1),winamp,iTunes)
-  else did -ar mp3s 1 $replace($did(mp3s,1),iTunes,winamp)
-}
-On *:dialog:mp3s:sclick:3:{
-  if ($did(mp3s,13).state == 1) w_ncfg mp3serv 1
-  else w_ncfg mp3serv o
-  if ($did(mp3s,17).text) { w_ncfg mp3maxcps $ifmatch | .dcc maxcps $calc($iif($ncfg(mp3maxcps) == o,0,$ncfg(mp3maxcps)) * 1024) }
-  else w_ncfg mp3maxcps o
-  if ($did(mp3s,14).text) w_ncfg mp3getcmd $ifmatch
-  else w_ncfg mp3getcmd none
-  if ($did(mp3s,5).state == 1) var %temp = say
-  else var %temp = me
-  if ($did(mp3s,1).text) var %temp2 = $ifmatch
-  w_ncfg mp3s %temp $replace(%temp2,,âbåld,,âcålår,,âånderlajn,,âcläör)
 
-}
 dialog hevent {
   title "Hide events"
   size -1 -1 77 47
@@ -2775,10 +1283,6 @@ on *:dialog:skydd:sclick:6:{
 
 }
 
-
-
-
-
 dialog pcw {
   title "Seek cw/pcw"
   size -1 -1 207 36
@@ -2869,7 +1373,7 @@ alias n.showversion {
 }
 
 on *:dialog:om:sclick:2:if (!%tmp.aboutblock) n.url http://nbs-irc.net
-on *:dialog:om:sclick:3:if (!%tmp.aboutblock) n.url https://github.com/ElectronicWar/nbs-irc
+on *:dialog:om:sclick:3:if (!%tmp.aboutblock) n.url https://github.com/MrNorwegian/nbs-irc
 on *:dialog:om:sclick:4:{
   set %about.icon 16
   .timer -m 20 70 about.iconchanger
@@ -3193,6 +1697,12 @@ alias -l nickserv_save {
   }
 }
 
+; Autojoin settings
+alias caj { 
+  if ($1) set %n.caj $1-
+  else set %n.caj $network
+  dlg aj
+}
 dialog aj {
   title "Autojoin (/caj)"
   size -1 -1 191 173
@@ -3271,6 +1781,8 @@ alias -l autojoin_save {
     inc %i 1
   }
 }
+
+alias txt if ($exists($1)) { set %txt $1- | dlg txt }
 dialog txt {
   title "nbs-irc"
   size -1 -1 298 228
@@ -3307,7 +1819,6 @@ on *:dialog:txt:sclick:10:{
   unset %txtload
 }
 
-
 alias cl_hideall {
   if ($chan(0) < 1) return    
   var %i = 1
@@ -3335,6 +1846,9 @@ alias cl_lc {
     inc %i
   }
 }
+
+; /ch - Channel list dialog
+alias ch dlg cl
 dialog cl {
   title "Channel list"
   size -1 -1 251 341
@@ -3391,210 +1905,9 @@ On *:dialog:cl:dclick:1:{
   cl_lc
 }
 On *:dialog:cl:sclick:11:var %. = $n.input(Always show these channels $+ $c44 $crlf $+ seperate with space.,info)
-dialog cc {
-  title "cc"
-  size -1 -1 272 207
-  option dbu
-  icon $scriptdirdll\i.dll, 7
-  text "Topic", 3, 2 1 66 8
-  text "Bans", 4, 2 22 65 8
-  combo 1, 2 9 268 100, edit drop
-  check "Set with Q", 16, 232 20 37 10
-  list 2, 1 30 269 98, size extsel
-  button "Bans", 18, 2 129 33 11
-  button "Excepts", 19, 36 129 33 11
-  button "Invites", 20, 70 129 33 11
-  button "Select all", 15, 168 129 33 11
-  button "Edit", 100, 202 129 33 11
-  button "Remove", 101, 236 129 33 11
-  check "Only ops set topic (+t)", 5, 3 143 67 10
-  check "No external messages (+n)", 6, 3 153 78 10
-  check "Invite only (+i)", 7, 3 163 51 10
-  check "Moderated (+m)", 8, 3 173 51 10
-  check "Private (+p)", 14, 3 183 43 10
-  check "Secret (+s)", 10, 3 193 59 10
-  check "Key (+k):", 30, 83 143 33 10
-  edit "", 32, 117 143 50 10, autohs
-  check "Limit (+l):", 31, 83 153 34 10
-  edit "", 33, 117 153 25 10, autohs
-  check "Only authed/registered users (+r)", 11, 83 163 96 10
-  check "No channel notices (+N)", 12, 83 173 84 10
-  check "No channel CTCPs (+C)", 13, 83 183 83 10
-  check "No colors (+c)", 9, 83 193 50 10
-  text "Custom:", 21, 182 144 22 8
-  edit "", 23, 206 143 63 10, autohs
-  text "Available:", 24, 182 164 25 8
-  text "", 25, 208 164 60 8, right
-  text "Current:", 26, 182 155 25 8
-  text "", 27, 208 155 60 8, right
-  button "OK", 17, 196 195 37 11, default ok
-  button "Cancel", 22, 234 195 37 11, cancel
-}
-alias cc { 
-  if ($status == connected) && ($1 ischan) && ($me ison $1) && (!$dialog(editban)) && (!$dialog(cc)) {
-    set %ccc $1
-    dlg cc
-    dialog -t cc $1 - $strip($right($n.chanstats($1),-6))
-  }
-}
-on *:dialog:cc:init:0:{
-  n.mdx SetMircVersion $version
-  n.mdx MarkDialog $dname
-  n.mdx SetControlMDX cc 2 listview report showsel > scripts\dll\mdx\views.mdx
-  did -i cc 2 1 headerdims 306:1 110:2 100:3
-  did -i cc 2 1 headertext Address $chr(9) $+ Set by $chr(9) $+ Set on
-  unset %unban %ccc.*
-  var %x = $+(",$scriptdirtemp\topic\,$md5(%ccc),â,$cid,")
-  if ($exists(%x)) loadbuf -o cc 1 $qt(%x)
-  else did -a cc 1 $chan(%ccc).topic
-  did -ar cc 3 Topic ( $+ $len($chan(%ccc).topic) $+ / $+ $n.topiclen $+ )
-  did -b cc 16,32,33 $+ $iif(e !isincs $chanmodes,$chr(44) $+ 19) $+ $iif(I !isincs $chanmodes,$chr(44) $+ 20)
-  if (!$n.qnet) did -h cc 16
-  if ($chan(%ccc).topic) {
-    var %x = $ifmatch
-    set %ccc.topic $iif($left(%x,1) == $chr(32),$right(%x,-1),%x)
-    did -c cc 1 1
-  }
-  var %i = 5
-  while (%i < 15) {
-    if ($cm(%i) isincs $gettok($chan(%ccc).mode,1,32)) did -c cc %i
-    inc %i
-  }
-  if (k isincs $gettok($chan(%ccc).mode,1,32)) && ($chankey(%ccc)) { did -c cc 30 | did -e cc 32 | did -a cc 32 $chankey(%ccc) | set %ccc.key $chankey(%ccc) }
-  if (l isincs $gettok($chan(%ccc).mode,1,32)) { did -c cc 31 | did -e cc 33 | did -a cc 33 $chan(%ccc).limit | set %ccc.limit $chan(%ccc).limit }
-  did -a cc 25 $iif($chanmodes,$ifmatch,unknown)
-  did -a cc 27 $iif($chan(%ccc).mode,$ifmatch,none)
-  mode %ccc +b
-  set -u20 %ccc.banget 1
-  set %ccc.list b
-  did -ar cc 4 Bans (retrieving)
-  did -f cc 3
-  if (q ison %ccc) && ($n.qnet) did -e cc 16
-}
-on *:dialog:cc:sclick:30,31:{
-  if ($did(cc,$did).state == 1) did -e cc $calc($did +2)
-  else did -b cc $calc($did +2)
-}
-on *:dialog:cc:sclick:18,19,20:{
-  var %x = $replace($did,18,b,19,e,20,I)
-  if (%ccc.list != %x) {
-    did -ar cc 4 $replace($did,18,Bans,19,Excepts,20,Invites)    
-    did -r cc 2
-    set -u10 %ccc.banget 1
-    set %ccc.list %x
-    mode %ccc + $+ %x
-  }
-}
-on *:dialog:cc:close:0:{
-  if ($dialog(editban)) dialog -x editban
-  if ($window(@topic)) close -@ @topic*
-  unset %oldmode
-}
-on *:dialog:cc:sclick:100:{
-  if ($did(cc,2).seltext) n.editmode $gettok($did(cc,2).seltext,6,32)
-}
-on *:dialog:cc:dclick:2:{
-  if ($did(cc,2).seltext) n.editmode $gettok($did(cc,2).seltext,6,32)
-}
-on *:dialog:cc:edit:1:{
-  did -ar cc 3 Topic ( $+ $len($did(cc,1,0)) $+ / $+ $n.topiclen $+ )
-  if ($len($did(cc,1,0)) > $n.topiclen) n.mdx SetColor 3 textbg 255
-  else n.mdx SetColor 3 textbg reset
-  n.preview cc $did(cc,1,0)
-}
-on *:dialog:cc:sclick:1:{
-  did -ar cc 3 Topic ( $+ $len($did(cc,1,0)) $+ / $+ $n.topiclen $+ )
-  n.mdx SetColor 3 textbg reset
-  n.preview cc $did(cc,1,0)
-}
-on *:dialog:cc:sclick:101:{
-  if (!%ccc.list) return
-  .write -c $qt($scriptdirtemp\unban)
-  var %i = 2
-  while (%i <= $did(cc,2).lines) {
-    if (s isin $gettok($did(cc,2,%i).text,2,32)) .write $qt($scriptdirtemp\unban) $gettok($did(cc,2,%i).text,6,32)
-    inc %i
-  }
-  if ($read($scriptdirtemp\unban)) {
-    did -r cc 2
-    var %x, %i = 1, %e = $lines($scriptdirtemp\unban)
-    while (%i <= %e) {
-      if ($numtok(%x,32) == $modespl) {
-        mode %ccc - $+ $str(%ccc.list,$numtok(%x,32)) %x
-        dec %i
-        unset %x
-      }
-      else var %x = %x $read($scriptdirtemp\unban,%i)
-      inc %i
-    }
-    mode %ccc - $+ $str(%ccc.list,$numtok(%x,32)) %x
-    set -u20 %ccc.banget 1      
-    mode %ccc + $+ %ccc.list
-  }
-}
-on *:dialog:cc:sclick:15:{
-  var %i = 2
-  while (%i <= $did(cc,2).lines) {
-    did -o cc 2 %i 0 $replace($gettok($did(cc,2,%i).text,2,32),+,+s) $gettok($did(cc,2,%i).text,3-,32)
-    inc %i
-  }
-  did -f cc 2
-}
-on *:dialog:cc:sclick:17:{
-  if (!$did(cc,1,0)) && (%ccc.topic) !raw -q topic %ccc :
-  elseif ($did(cc,1,0) === %ccc.topic) .echo -qgs a
-  else {
-    if ($did(cc,16).state == 1) && ($n.qnet) && (q ison %ccc) !raw -q PRIVMSG Q :settopic %ccc $did(cc,1,0)
-    else topic %ccc $did(cc,1,0)
-  }
-  var %i = 5, %+modes, %-modes, %+key, %-key, %cmodes = $did(cc,23)
-  while (%i < 15) {
-    if (($did(cc,%i).state == 1) && ($cm(%i) !isincs $gettok($chan(%ccc).mode,1,32))) var %+modes = %+modes $+ $cm(%i)
-    elseif (($did(cc,%i).state == 0) && ($cm(%i) isincs $gettok($chan(%ccc).mode,1,32))) var %-modes = %-modes $+ $cm(%i)
-    inc %i
-  }
-  if (($did(cc,30).state == 1) && ($did(cc,32).text) && (k !isincs $gettok($chan(%ccc).mode,1,32))) var %+key = +k $did(cc,32).text
-  elseif (($did(cc,30).state == 1) && ($did(cc,32).text) && ($did(cc,32).text != %ccc.key) && (k isincs $gettok($chan(%ccc).mode,1,32))) { var %+key = +k $did(cc,32).text | var %-key = -k %ccc.key }
-  elseif (($did(cc,30).state == 0) && (k isincs $gettok($chan(%ccc).mode,1,32))) var %-key = -k $chan(%ccc).key
-  if (($did(cc,31).state == 1) && ($did(cc,33).text isnum) && ($did(cc,33).text != %ccc.limit)) var %+modes = %+modes l $did(cc,33).text
-  elseif (($did(cc,31).state == 0) && (l isincs $gettok($chan(%ccc).mode,1,32))) var %-modes = %-modes $+ l
-  if (%+modes) || (%-modes) mode %ccc $iif(%+modes,$+(+,$v1)) $iif(%-modes,$+(-,$v1)) 
-  if (%cmodes) mode %ccc %cmodes
-  if (%-key) mode %ccc %-key
-  if (%+key) {
-    mode %ccc %+key
-    set %pw. [ $+ [ %ccc ] ] $gettok(%+key,2-,32)
-  }
-}
-alias n.editmode {
-  if (!$1) return
-  unset %oldmode
-  set %oldmode $1-
-  dlg editban
-}
-dialog editban {
-  title "Edit"
-  size -1 -1 153 35
-  option dbu
-  icon $scriptdirdll\i.dll, 7
-  edit "", 1, 2 10 150 11, autohs
-  text "Address:", 2, 2 2 74 8
-  button "OK", 3, 77 23 37 11, ok
-  button "Cancel", 4, 115 23 37 11, cancel
-}
-On *:dialog:editban:init:0:did -a editban 1 %oldmode
-On *:dialog:editban:sclick:3:{
-  if (%oldmode != $did(editban,1).text) {
-    mode %ccc $+(-,%ccc.list,+,%ccc.list) %oldmode $did(editban,1).text
-    if ($dialog(cc)) {
-      did -r cc 2
-      mode %ccc + $+ %ccc.list
-    }
-  }
-  unset %oldmode
-}
 
-
+; cmds - Commands dialog
+alias cmds dlg cmds
 dialog cmds {
   title "Commands (/cmds)"
   size -1 -1 295 221
@@ -3647,7 +1960,8 @@ on *:dialog:cmds:dclick:1-5:{
   if ($left(%x,1) == /) && ($n.input(Run command %x now?,y/n)) $right(%x,-1)
 }
 
-
+; F-key bindings dialog
+alias fkeys dlg fkeys
 dialog fkeys {
   title "F-key bindings (/fkeys)"
   size -1 -1 171 90
@@ -3713,6 +2027,8 @@ on *:dialog:fkeys:sclick:100:{
     inc %i 1
   }
 }
+
+; Missing alias ???
 dialog servers {
   title "Servers"
   size -1 -1 200 124
@@ -3761,6 +2077,9 @@ on *:dialog:servers:dclick:1:{
     if ($did(servers,5).state == 0) did -c servers 5
   }
 }
+
+; Blacklist dialog
+alias blist dlg blist
 dialog addedit {
   title "Add"
   size -1 -1 167 41
@@ -3896,6 +2215,9 @@ alias n.bl-update {
     }
   }
 }
+
+; Alarm dialog
+alias alarm dlg alarm
 dialog alarm {
   title "Alarm timer (/alarm)"
   size -1 -1 106 141
@@ -3922,7 +2244,6 @@ dialog alarm {
   text "hh:mm (24h)", 19, 65 12 35 8
   text "minutes", 20, 65 24 22 8
 }
-
 
 On *:dialog:alarm:init:0:{
   did -b alarm 18
@@ -4025,6 +2346,12 @@ On *:dialog:alarm:sclick:7:{
   .timeralarm off
   splay stop
 }
+
+; Game launcher dialog
+alias g-join {
+  if ($1) set %hlip $1
+  dlg gl
+}
 dialog gl {
   title "Game launcher (F10) (/g-join)"
   size -1 -1 218 44
@@ -4070,6 +2397,77 @@ On *:dialog:gl:sclick:39:{
   }
   rcon_win
 }
+alias rcon_win {
+  if (!%rcon.port) return
+  if (!$window(@rcon)) dlg rcon_pass
+  else n.echo info -atgOnly one rcon connection supported, please close the existing rcon window.
+}
+
+dialog rcon_pass {
+  title "Rcon"
+  size -1 -1 83 43
+  option dbu
+  button "OK", 1, 52 32 30 10, default ok
+  edit "", 2, 0 10 82 11, pass
+  check "Save", 3, 1 22 25 10
+  text "Password:", 4, 1 2 31 7
+}
+on *:dialog:rcon_pass:init:0:{
+  if ($ncfg(rcon_password_save) == 1) { 
+    did -c rcon_pass 3
+    if ($ncfg(rcon_password)) did -a rcon_pass 2 $ifmatch
+  }
+  did -f rcon_pass 2
+}
+
+on *:udpread:rcon:{
+  if ($sockerr > 0) return
+  :nextread
+  sockread -f %rcon
+  if ($sockbr == 0) return
+  if (challenge rcon isin %rcon) { 
+    .timerrcon off
+    set %rcon.id $gettok(%rcon,3,32)
+    window -ek0d @rcon nbs.ico
+    titlebar @rcon $+([,%rcon.ip,:,%rcon.port,])
+    echo -t @rcon $npre connected to $+(%rcon.ip,:,%rcon.port)
+  }
+  if (!%rcon) { goto end }
+  if ($left($remove(%rcon,ÿÿÿÿ),1) == l) var %rcon.svar = $right($remove(%rcon,ÿÿÿÿ),-1)
+  else var %rcon.svar = $remove(%rcon,ÿÿÿÿ)
+  echo -t @rcon <- %rcon.svar
+  :end
+  goto nextread
+}
+On *:INPUT:@rcon:{
+  echo -t @rcon -> $1-
+  rcon_cmd $1-
+  haltdef
+}
+alias rcon_cmd if ($1) sockudp -k rcon 5000 %rcon.ip %rcon.port ÿÿÿÿ $+ rcon %rcon.id %rcon.pass $1- $+ $lf
+On *:CLOSE:@rcon:{
+  sockclose rcon*
+  unset %rcon.*
+}
+on *:dialog:rcon_pass:sclick:1:{
+  if ($did(rcon_pass,2).text) {
+    set %rcon.pass $ifmatch
+    if ($did(rcon_pass,3).state == 1) {
+      w_ncfg rcon_password %rcon.pass
+      w_ncfg rcon_password_save 1
+    }
+    else {
+      w_ncfg rcon_password_save o
+      w_ncfg rcon_password å
+    }
+    if (%rcon.pass) {
+      sockudp -k rcon 5000 %rcon.ip %rcon.port ÿÿÿÿ $+ challenge rcon $+ $lf
+      .timerrcon 1 1 sockclose rcon*
+    }
+  }
+}
+
+
 On *:dialog:gl:sclick:13:{
   if ($did(gl,2)) set %currgame $ifmatch
   else { 
@@ -4123,1510 +2521,9 @@ on *:udpread:hl:{
   }
 }
 
-; events etc
-
-on ^*:CHAT:*:{ 
-  if ($1 == ACTION) { echo $color(action) -t =$nick * $nick $left($2-,-1) }
-  else echo $color(normal) -mtbf =$nick $replace($nick.style,<mode>,,<nick>,$nick) $+  $1-
-  if ($ncfg(privpip) == 1) && ($ncfg(query_sound_onopen) != 1) && (!%tmp.query.sound.block) var %x = 1
-  if ($active != =$nick) {
-    if (%x == 1) $ncfg(privljud)
-    set -u3 %tmp.query.sound.block 1
-  }
-  elseif (!$appactive) {
-    if (%x == 1) $ncfg(privljud)
-    set -u3 %tmp.query.sound.block 1
-  }
-  haltdef 
-}
-on ^*:TEXT:*:#:{
-  if ($halted) return
-  haltdef
-
-  ; Add support for proper playback buffer timestamps which use server-time or znc.in/server-time[-iso] 
-  var %timestamp = $iif($msgstamp, $msgstamp, $ctime)
-  
-  if ($hget(nbs,win_ashow) == 1) window -w $chan
-  hadd -m temp ci. [ $+ [ $cid ] $+ ] . [ $+ [ $chan ] ] $ticks
-  hadd -m temp text $color(normal) -mlbfi4 # $asctime(%timestamp, $n.timestamp) $replace($nick.style,<mode>,$cmode($nick,$chan,o),<nick>,$nick) $+  $1-
-  ;if ($me isin $1-) {
-  if ($wildtok($1-,$me $+ *,0,32) != 0) { 
-    if ($hget(nbs,nickbar) == 1) echo $color(normal) -mlbfi4 # $asctime(%timestamp, $n.timestamp) $replace($nick.style,<mode>,$cmode($nick,$chan,o),<nick>, $+ $hget(nbs,highlight_nick_color) $+ $nick $+ ) $+  $1-
-    else echo $hget(temp,text)
-    n.highlight $1-
-    if ($away && !%n.away. [ $+ [ $nick ] ]) && ($ncfg(awaynotice) != 1) {
-      .notice $nick I'm away: $awaymsg
-      set -u99999 %n.away. $+ $nick 1
-    }
-  }
-  else echo $hget(temp,text)
-  if ($hget(nbs,mp3serv) == 1) && ($hget(nbs,mp3getcmd) isin $1-) n.servemp3 $nick
-  if ($chr(1) $+ # isin $hget(prot,chans)) && ($me isop #) || ($me ishop #) {
-    if (($nick isop #) || ($nick ishop #)) && (!$hget(prot,$+(#,punishops))) return
-    if ($hget(prot,$+(#,caps)) == 1) n.capss # $nick $1-
-    if ($hget(prot,$+(#,repeat)) == 1) n.repeats # $nick $1-
-    if ($hget(prot,$+(#,flood)) == 1) n.floods # $nick $1-
-    if ($hget(prot,$+(#,advertising)) == 1) n.spams # $nick $1-
-  }
-}
-on ^*:action:*:#:{ 
-  if ($me isin $1-) {
-    if ($ncfg(nickpip) == 1) && ((!%tmp.nbf) || (%tmp.nbf < 2)) {
-      splay $qt($mircdirscripts\beep.wav)
-      inc -u10 %tmp.nbf
-    }
-    if ($hget(nbs,popup_nick) == 1) n.ptext # $chr(1) Highlighted in # $chr(1) * $cmode($nick,$chan) $eval($strip($1-),1)
-  }
-  if ($chr(1) $+ # isin $hget(prot,chans)) && ($me isop #) || ($me ishop #) {
-    if (($nick isop #) || ($nick ishop #)) && (!$hget(prot,$+(#,punishops))) return
-    if ($hget(prot,$+(#,caps)) == 1) n.capss # $nick $1-
-    if ($hget(prot,$+(#,repeat)) == 1) n.repeats # $nick $1-
-    if ($hget(prot,$+(#,flood)) == 1) n.floods # $nick $1-
-    if ($hget(prot,$+(#,advertising)) == 1) n.spams # $nick $1-
-  }
-}
-on ^*:TEXT:*:?:{
-  if ($halted) return
-  haltdef
-
-  ; Add support for proper playback buffer timestamps which use server-time or znc.in/server-time[-iso] 
-  var %timestamp = $iif($msgstamp, $msgstamp, $ctime)
-
-  if ($nick == -psyBNC) {  
-    if ($window(-psyBNC).state != hidden) window -h -psyBNC    
-    n.bnc psyBNC
-    echo -tmi4 $bncwin(psyBNC,$cid) - $1- 
-  }
-  elseif ($nick == -sBNC) {  
-    if ($window(-sBNC).state != hidden) window -h -sBNC    
-    n.bnc sBNC
-    echo -tmi4 $bncwin(sBNC,$cid) - $1-
-    if ($ncfg(sbnc_autoread) == 1) {
-      if ($1-4 == You have new messages.) {
-        set %sbnc. [ $+ [ $cid ] $+ ] .msglog 1
-        .!msg -sbnc read
-      }
-      elseif ($1-4 == End of LOG. Use) {
-        unset %sbnc. [ $+ [ $cid ] $+ ] .* 
-        .!msg -sbnc erase
-      }
-      elseif (%sbnc. [ $+ [ $cid ] $+ ] .msglog == 1) && ($numtok($1-,58) > 2) {
-        var %nick = $gettok($gettok($1-,2,58),1,32)
-        if (@ !isin %nick) && (%nick !isnum) {
-          if (!$window(%nick)) query %nick
-          set %sbnc. [ $+ [ $cid ] $+ ] .host1. [ $+ [ %nick ] ] $mid($gettok($gettok($1-,2,58),2,32),2,-1)
-          if (%sbnc. [ $+ [ $cid ] $+ ] .host1. [ $+ [ %nick ] ] != %sbnc. [ $+ [ $cid ] $+ ] .host2. [ $+ [ %nick ] ]) echo $color(info) -ti4 %nick $pre Offline messages from $gettok($gettok($1-,2,58),1,32) $par($mid($gettok($gettok($1-,2,58),2,32),2,-1)) $+ :
-          set %sbnc. [ $+ [ $cid ] $+ ] .host2. [ $+ [ %nick ] ] %sbnc. [ $+ [ $cid ] $+ ] .host1. [ $+ [ %nick ] ]
-          if ($gettok($gettok($1-,3,58),1,32) == ++c) {
-            var %cryptmsg = $gettok($gettok($1-,3-,58),2-,32), %crypthost = *!* $+ $remove($mid($gettok($gettok($1-,2,58),2,32),2,-1),~)
-            var %msg = (c) $n.crypt(%cryptmsg,d,%nick,%crypthost)
-          }
-          else var %msg = $gettok($1-,3-,58)
-          echo $color(normal) -mi4 %nick $gettok($1-,1,58) $event.msg(%nick,%nick,%msg)
-        } 
-      }
-    }
-  }
-  else {
-    echo $color(normal) -mlbfi4 $nick $asctime(%timestamp, $n.timestamp) $replace($nick.style,<mode>,,<nick>,$nick) $+  $1- 
-    if ($hget(nbs,mp3serv) == 1) && ($hget(nbs,mp3getcmd) isin $1-) n.servemp3 $nick
-    if ($hget(nbs,privpip) == 1) && ($hget(nbs,query_sound_onopen) != 1) && (!%tmp.query.sound.block) var %x = 1
-    if (!$appactive) fasttitle $nick $+ : $eval($1-,1) 
-    if ($active != $nick) {
-      if (%x == 1) $hget(nbs,privljud)
-      set -u3 %tmp.query.sound.block 1
-    }
-    elseif (!$appactive) {
-      if (%x == 1) $ncfg(privljud)
-      set -u3 %tmp.query.sound.block 1
-    }
-    if ($hget(nbs,popup_query) == 1) && ($hget(nbs,popup_query_always) == 1) {
-      if ($appactive) && ($active != $nick) var %x = 1
-      elseif (!$appactive) var %x = 1
-      if (%x == 1) n.ptext $nick $chr(1) msg from $nick $chr(1) $replace($nick.style,<mode>,$null,<nick>,$nick)  $+ $eval($1-,1)
-    }
-  }
-}
-on *:OPEN:?:*:{
-  if ($halted) return
-  if ($nick == -psyBNC) n.bnc psyBNC
-  elseif ($nick == -sBNC) n.bnc sBNC
-  else {
-    n.query.stats $nick $address
-    if ($ncfg(privpip) == 1) && ($ncfg(query_sound_onopen == 1)) $ncfg(privljud)
-    if ($n.bluser($fulladdress)) echo $color(info) -t $nick $npre User is blacklisted $par($gettok(%bltmp,2-,44)))
-    if ($hget(nbs,popup_query) == 1) && ($ncfg(popup_query_always) != 1) n.ptext $nick $chr(1) msg from $nick $chr(1) $replace($nick.style,<mode>,$null,<nick>,$nick)  $+ $eval($1-,1)
-  }
-}
-on ^*:RAWMODE:#:{
-  if ($halted) return
-  haltdef
-  if ($1 == +b) || ($1 == -o+b) { 
-    if ($me isop #) || ($me ishop #) {
-      var %o = 1
-      set -u900 %banmode -b | set -u900 %banchan # | set -u900 %banmask $iif($1 == -o+b,$3,$2)
-    }
-    echo $color(mode) -ti4 # $npre $+  $nick $par($replace($1,+b,4+b)) $2- $iif(%o == 1,$par(F6: unban))
-  }
-  elseif ($1 == -b) { 
-    if ($me isop #) || ($me ishop #) {
-      var %o = 1
-      set -u900 %banmode +b | set -u900 %banchan # | set -u900 %banmask $2
-    }
-    echo $color(mode) -ti4 # $npre $+  $nick $par(4 $+ $1) $2- $iif(%o == 1,$par(F6: ban))
-  }
-  else {
-    $iif($hget(netsplit, [ [ $cid ] $+ ] . [ $+ [ $2 ] ]),.timer -m 1 1900 echo $color(mode) -ti4 # $npre $+  $nick $par($1) $iif($2,$2-,#))
-  }
-  if ($me isin $2) && ($hget(nbs,popup_other) == 1) {
-    n.ptext # $chr(1) Channel mode: # $chr(1) $npre $+  $nick $par($1) $replace($2-,$me, $+ $me $+ ) $iif($cid != $activecid,$par($network))
-  }
-}
-on ^*:DEOP:#:{
-  if ($opnick == $me) {
-    if ($active != $chan) && (!%n.connecting. [ $+ [ $cid ] ]) echo $color(mode) -atg $npre $+  info: -o in $chan by $nick $iif($cid != $activecid,$par($network))
-  }
-}
-on ^*:OP:#:{
-  if ($opnick == $me) {
-    if ($active != $chan) && (!%n.connecting. [ $+ [ $cid ] ]) echo $color(mode) -atg $npre $+  info: +o in $chan by $nick $iif($cid != $activecid,$par($network))
-    if ($hget(nbs,blacklist) == 1) .timer 1 1 n.blscan #
-    .timer 1 10 n.checkkey #
-  }
-}
-on ^*:SERVEROP:#:if ($opnick == $me) && ($hget(nbs,blacklist) == 1) .timer 1 2 n.blscan #
-on ^*:VOICE:#:{
-  if ($vnick == $me) && ($active != $chan) && (!%n.connecting. [ $+ [ $cid ] ]) echo $color(mode) -atg $npre $+  info: +v in $chan by $nick $iif($cid != $activecid,$par($network))
-}
-on ^*:DEVOICE:#:{
-  if ($vnick == $me) && ($active != $chan) && (!%n.connecting. [ $+ [ $cid ] ]) echo $color(mode) -atg $npre $+  info: -v in $chan by $nick $iif($cid != $activecid,$par($network))
-}
-on ^*:HELP:#:{
-  if ($hnick == $me) {
-    if ($active != $chan) && (!%n.connecting. [ $+ [ $cid ] ]) echo $color(mode) -atg $npre $+  info: +h in $chan by $nick $iif($cid != $activecid,$par($network))
-    if ($hget(nbs,blacklist) == 1) n.blscan #  
-  }
-}
-on ^*:DEHELP:#:{
-  if ($hnick == $me) {
-    if ($active != $chan) && (!%n.connecting. [ $+ [ $cid ] ]) echo $color(mode) -atg $npre $+  info: -h in $chan by $nick $iif($cid != $activecid,$par($network)) 
-  }
-}
-on *:CTCPREPLY:*:{
-  n.echo ctcp -at $kl:(CTCP $1 reply from $nick) $iif($1 == ping,reply took $calc(($ticks - %ctcp.ping.ticks)/1000) $+ s,$2-)
-  unset %ctcp.ping.ticks
-  haltdef
-}
-on ^*:USERMODE:{
-  echo $color(mode) -ste $npre $+  $nick sets mode: $1-
-  haltdef
-}
-alias amsg {
-  if ($chan(0) == 0) { echo $color(info) -at $npre /amsg: you're not on a channel | return }
-  if (!$1) { echo $color(info) -at $npre /amsg: insufficient parameters | return }
-  .!amsg $1-
-  var %i = 1, %t = $chan(0)
-  while (%i <= %t) {
-    echo $color(own) -qmnt $chan(%i) $replace($me.style,<mode>,$cmode($me,$chan(%i),o),<nick>,$me) $+  $1-
-    inc %i 1
-  }
-}
-alias amsg2 {
-  if (!$1) {
-    echo $color(info) -atg $npre /amsg2: lets you exclude channels from 'amsg'
-    echo $color(info) -atg $npre Usage: /amsg2 setlist to view ignored channels, /amsg2 setlist <channels> to set ignored channels $par(seperated with space) $+ , /amsg2 message
-  }
-  elseif ($1 == setlist) && ($2) { 
-    w_ncfg amsg_ignore $2- 
-    n.echo info -atg Channels to not msg: $2- $par($numtok($2-,32))
-  }
-  elseif ($1 == setlist) && (!$2) echo $color(info) -atg $npre Current channels to ignore: $iif($ncfg(amsg_ignore),$ifmatch $par($numtok($ifmatch,32)),none)
-  else {
-    var %i = 1, %t = $chan(0), %amsg.ignore = $ncfg(amsg_ignore), %amsg.chans
-    while (%i <= %t) {
-      if (!$istok(%amsg.ignore,$chan(%i),32)) {
-        var %amsg.chans = $addtok(%amsg.chans,$chan(%i),44)
-        echo $color(own) -qmnt $chan(%i) $replace($me.style,<mode>,$cmode($me,$chan(%i),o),<nick>,$me) $+  $1-
-      }
-      inc %i 1
-    }
-    .raw PRIVMSG %amsg.chans : $+ $1-
-  }
-}
 on *:filercvd:*:{
   if ($hget(nbs,popup_dcc) == 1) && ($file(" $filename ").size > 1048576) n.ptext "get $nick $nopath($filename) "  $chr(1) DCC Get finished $chr(1) $npre Get of $nopath($filename) from $nick finished.
 }
 on *:getfail:*:{
   if ($hget(nbs,popup_dcc) == 1) n.ptext "get $nick $nopath($filename) " $chr(1) DCC Get failed $chr(1) $npre Failed to get $nopath($filename) from $nick
-}
-alias notice {
-  if ($isid) return
-  if ($2) {
-    echo $color(notice) -atgq $pre $kl:(notice: $1) $2-
-    !.notice $1-
-  }
-  else n.echo info -atg usage: /notice nick message
-}
-alias ctcp {
-  if ($isid) return
-  if ($2 == ping) set %ctcp.ping.ticks $ticks
-  n.echo ctcp -atgq $kl:(CTCP to $1) $upper($2)) $3-
-  !.ctcp $1-
-}
-alias dcc {
-  if ($isid) return
-  .write $cit($logdir $+ -dcc.log) $date $time - Send to $2 $+ : $3- ( $+ $round($calc($file($3).size /1024/1024),2) MB)
-  !dcc $1-
-}
-alias msg {
-  if ($isid) || ($0 < 2) return
-  if (!$window($1)) echo -atqg $npre $kl:(msg: $1) $2-
-  else echo $color(own) -qnmti4 $1 $replace($me.style,<mode>,$cmode($me,$1,o),<nick>,$me) $+  $2-
-  !.msg $1-
-}
-alias pastemsg {
-  if ($isid) || ($0 < 2) return
-  else echo $color(own) -nmti4 $1 $replace($me.style,<mode>,$cmode($me,$1,o),<nick>,$me) $+  $2-
-  !.msg $1-
-}
-alias say {
-  if ($active === Status Window) { n.echo info -atg Error: can't use command here }
-  else msg $active $1-
-}
-on *:INPUT:*:{
-  if ($active === Status Window) || ($left($1,1) == /) && (!$ctrlenter) return
-  if ($left($target,1) == @) && ($window($target)) return
-  if ($target ischan) {
-    hadd -m temp ci. [ $+ [ $cid ] $+ ] . [ $+ [ $chan ] ] $ticks
-    if ($window($chan).state == hidden) window -w $chan 
-  }
-  if ($inpaste) && ($left($target,1) != =) {
-    if ($cb(0) > 1) {
-      set %paste.target $target
-      if (!%tmp.paste) dlg paste
-      set -u1 %tmp.paste 1
-    }
-    else editbox -a $1-
-  }
-  elseif (!$halted) msg $target $1-
-  haltdef
-}
-on ^*:JOIN:#:{
-  haltdef
-  if ($nick == $me) {
-    hadd -m temp ci. [ $+ [ $cid ] $+ ] . [ $+ [ $chan ] ] $ticks 
-    .timer 1 9 topicchan #
-    set -u7 % [ $+ [ # ] $+ ] .disabled 1
-    return
-  }
-  if ($query($nick)) && ($comchan($nick,0) == 1) { 
-    if ($ncfg(query_show_online) == 1) echo $color(join) -t $nick $npre Online $par(joined $chan)
-  }
-  if ($hget(nbs,blacklist) == 1) {
-    if ($hget(nbs,blacklist_custom_channels) != 1) || ($istok($hget(nbs,blacklist_channels),$chan,32)) {
-      if ($me isop #) || ($me ishop #) {
-        if ($n.bluser($address($nick,5)) == 1) !raw -q mode # +b $gettok(%bltmp,1,44) $+ $crlf $+ KICK # $nick : $+ $gettok(%bltmp,2-,44)
-      }
-    }
-  }
-  if (!$ehide(joins,#)) {
-    if ($hget(netsplit, [ [ $cid ] $+ ] . [ $+ [ $nick ] ])) {
-      hinc -m temp netsplit.tj. [ $+ [ $cid ] $+ ] . [ $+ [ # ] ]
-      if ($hget(temp,netsplit.join.f. [ $+ [ $cid ] $+ ] . [ $+ [ # ] ]) != 1) {
-        if ($len($hget(temp,netsplit.join. [ $+ [ $cid ] $+ ] . [ $+ [ # ] ]) $nick) < 500) hadd -m temp netsplit.join. [ $+ [ $cid ] $+ ] . [ $+ [ # ] ] $hget(temp,netsplit.join. [ $+ [ $cid ] $+ ] . [ $+ [ # ] ]) $nick $+ $chr(44)
-        else hadd temp netsplit.join.f. [ $+ [ $cid ] $+ ] . [ $+ [ # ] ] 1
-      }
-      .timer 1 4 hdel netsplit [ [ $cid ] $+ ] . [ $+ [ $nick ] ]
-    }
-    if ($hget(temp,netsplit.tj. [ $+ [ $cid ] $+ ] . [ $+ [ # ] ])) .timernetsplitjoin [ $+ [ # ] ] 1 1 n.netsplitjoin #
-    else {
-      if ($ialchan($wildsite,#,0) > 1) {
-        if ($ialchan($wildsite,#,0) < 9) {
-          var %i = 1, %x
-          while (%i <= $ialchan($wildsite,#,0)) {
-            if ($nick != $ialchan($wildsite,#,%i).nick) var %x = %x $cmode($ialchan($wildsite,#,%i).nick,#) $+ $chr(44)
-            inc %i
-          }
-          var %jklon = $par(clones with: $left(%x,-1) $iif(%i > 3,( $+ $calc(%i -2) $+ ))) 
-        }
-        else var %jklon = $par($calc($ialchan($wildsite,#,0) -1) clones)
-      }
-      echo $color(join) -ti4 $chan $npre Join: $nick $par($address) %jklon
-    }
-  }
-}
-on ^*:PART:#:{
-  haltdef
-  if ($nick == $me) {
-    hdel nbs ci. [ $+ [ $cid ] $+ ] . [ $+ [ $chan ] ]
-    n.echo join -t # parting channel $par($1-)
-    echo #   
-    return
-  }
-  if (!$ehide(parts,#)) echo $color(part) -ti4 $chan $npre Part: $cmode($nick,#) $par($address) $par($1-)
-}
-on *:DNS:{
-  haltdef  
-  if (!$raddress) {
-    echo $color(info) -atgq $npre Unable to resolve $n.quote($dns(0).ip) 
-    set %tmp.dnsresult $dns(0).ip
-  }
-  elseif ($dns(0) > 1) {
-    var %i = 1
-    set %tmp.dnsresult $dns(%i)
-    while (%i <= $dns(0)) {
-      echo $color(info) -tagq $npre Result %i $+ : $dns(%i).ip  $+ $par($dns(%i))
-      inc %i
-    }
-  }
-  else {
-    set %tmp.dnsresult $raddress
-    echo $color(info) -tagq $npre Result: $raddress  $+ $par(  $iif($naddress == $raddress,$dns(0).ip,$naddress)) $+ , Ctrl+F2: copy to clipboard 
-  }
-  if (%tmp.i2n == 1) {
-    host2nick %tmp.dnsresult
-    unset %tmp.i2n
-  }
-}
-on ^*:KICK:#:{
-  haltdef
-  echo $color(kick) -ti4 $chan $npre  $+ $cmode($knick,#) was 4kicked by $nick $par($1-)
-  if ($knick == $me) { 
-    echo $color(info) -ste $npre kicked from $chan by $cmode($nick,#) $par($address) $par($1-) $iif($ncfg(autorejoin) == 1 && $nick != $me,rejoining in $ncfg(ar_time) $+ s $+ $chr(44) $par(Cancel with Ctrl+F5))
-    if ($active != $chan) && ($active != Status Window) echo $color(mode) -atg $npre info: kicked from $chan by $nick $par($1-) $iif($cid != $activecid,$par($network))    
-    if ($ncfg(autorejoin) == 1) && ($ncfg(ar_time) isnum) && ($nick != $me) .timer [ $+ [ # ] ] 1 [ $ncfg(ar_time) ] n.rejoin # $chankey(#)
-    set -u [ $+ [ $ncfg(ar_time) ] ] %rejointimer #
-    if ($hget(nbs,popup_other) == 1) n.ptext - $chr(1) Kicked $chr(1) $npre kicked from $chan by $cmode($nick,#) $par($1-)
-    if ($hget(nbs,whois_on_kick) == 1) {
-      set -u10 %whois.window.passive 1
-      whois $nick
-    }      
-  }
-}
-on ^*:BAN:#:{
-  haltdef 
-  if ($me isop #) && ($hget(nbs,banskydd) == 1) && ($banmask iswm $address($me,5)) && ($nick != $me) {
-    !raw -q mode # -ob $nick $banmask $+ $crlf $+ KICK # $nick : $+ $hget(nbs,bsmed)
-  } 
-}
-
-on ^*:QUIT:{
-  haltdef  
-  if ($query($nick)) echo $color(quit) -t $nick $npre Quit $par($1-)
-  var %i = 1
-  while (%i <= $comchan($nick,0)) {
-    if (!$ehide(quits,$comchan($nick,%i))) {
-      if (!$3) && (quit !isin $1) && (. isin $1) && (. isin $2) {
-        if (!$hget(netsplit)) hmake netsplit 30
-        hadd -u1800 netsplit [ [ $cid ] $+ ] . [ $+ [ $nick ] ] 1
-        hinc -m temp netsplit.tq. [ $+ [ $cid ] $+ ] . [ $+ [ $comchan($nick,%i) ] ]
-        if ($hget(temp,netsplit.quit.f. [ $+ [ $cid ] $+ ] . [ $+ [ $comchan($nick,%i) ] ]) != 1) {
-          if ($len($hget(temp,netsplit.quit. [ $+ [ $cid ] $+ ] . [ $+ [ $comchan($nick,%i) ] ]) $nick) < 500) hadd -m temp netsplit.quit. [ $+ [ $cid ] $+ ] . [ $+ [ $comchan($nick,%i) ] ] $hget(temp,netsplit.quit. [ $+ [ $cid ] $+ ] . [ $+ [ $comchan($nick,%i) ] ]) $nick $+ $chr(44)
-          else hadd temp netsplit.quit.f. [ $+ [ $cid ] $+ ] . [ $+ [ $comchan($nick,%i) ] ] 1
-        }
-        .timersnetsplitquit 1 1 n.netsplitquit $1-
-      }
-      else n.echo quit -ti4 $comchan($nick,%i) Quit: $cmode($nick,$comchan($nick,%i)) $par($address) $par($1-)
-    }
-    inc %i
-  }
-  if ($hget(nbs,reclaim_nick) == 1) {
-    if ($address($me,1) == $gettok($hget(temp,disconnect. [ $+ [ $cid ] ]),2,32)) && ($nick == $gettok($hget(temp,disconnect. [ $+ [ $cid ] ]),1,32)) nick $nick
-  }
-}
-
-on ^*:TOPIC:#:{ 
-  if ($1) {
-    echo $color(topic) -ti4 $chan - $clr(info,$nick changes topic to:) $1-
-    if (!$isdir($scriptdirtemp\topic)) mkdir $scriptdirtemp\topic
-    .write -il1 $+(",$scriptdirtemp\topic\,$md5(#),â,$cid,") $1-
-  }
-  else echo $color(topic) -ti4 $chan $npre Topic removed by $nick
-  haltdef
-} 
-on ^*:INVITE:*:{
-  haltdef
-  if ($n.qnet) && ($ncfg(quakenet_bot_autojoin) == 1) && (($nick == q) || ($nick == l)) join $iif(autojoin_minimize == 1,-n) $chan
-  elseif ($n.unet) && ($ncfg(undernet_bot_autojoin) == 1) && ($nick == x) join $iif(autojoin_minimize == 1,-n) $chan
-  n.echo notice -atm $nick $par($address) invited you to $chan
-  if ($hget(nbs,popup_other) == 1) n.ptext - $chr(1) Invite $chr(1) $bpre $nick invited you to $chan
-}
-on ^*:NICK:{
-  haltdef
-  if ($nick === $newnick) return
-  if ($nick == $me) echo $color(nick) -st $npre Nick changed to: $newnick
-  elseif ($query($newnick)) echo $color(nick) -t $newnick $npre $clr(highlight,$nick) is now known as $clr(highlight,$newnick)
-  var %i = 1
-  while (%i <= $comchan($newnick,0)) {
-    if (!$ehide(nicks,$comchan($newnick,%i))) echo $color(nick) -t $comchan($newnick,%i) $npre $cmode($newnick,$comchan($newnick,%i),_) $+ $clr(highlight,$nick) is now known as $cmode($newnick,$comchan($newnick,%i),_) $+ $clr(highlight,$newnick)
-    inc %i
-  }
-}
-on *:EXIT:{
-  scon -a clearall
-  close -@
-  cuptime
-}
-
-raw 366:*:{
-  if (!$chan($2).ial) .timer 1 1 whochan $2
-  set %jkanal $2
-  set -u15 %ctcp.ignore $2
-  if (%show.names == 1) {
-    n.echo notice -sgm $clr(norm,$+(,$2,:)) $3-
-    echo $color(info) -sg -
-    window -g2 "status window"
-    haltdef
-  }
-  else n.echo info -t $2 $n.chanstats($2)
-  unset %show.names
-}
-raw 352:*:{
-  if (%dns2nick.host) {
-    inc %dns2nick.times
-    if (%dns2nick.times == 1) set %dns2nick.users $6
-    else set %dns2nick.users %dns2nick.users $+ , $6
-    haltdef
-  } 
-  if (%n.whosvar != 1) { haltdef }
-}
-raw 315:*:{ 
-  if (%dns2nick.host) {
-    if (!%dns2nick.times) echo $color(info) -atg $npre Couldn't find any user with that host
-    elseif (%dns2nick.times == 1) echo $color(info) -atg $npre User found: %dns2nick.users
-    else echo $color(info) -at $npre %dns2nick.times users found: %dns2nick.users
-    unset %dns2nick* 
-    haltdef
-  } 
-  if ($2 == %csial) clonescan $2
-  if (%n.whosvar != 1) { haltdef }
-  unset %csial %n.whosvar
-}
-raw 332:*:{ 
-  haltdef   
-  if ($2 ischan) echo $color(topic) -ti5 $2 - Topic: $3- 
-  else echo $color(topic) -atgi5 - Topic in $2 $+ : $3- 
-}
-raw 333:*:{
-  haltdef
-  if ($2 ischan) echo $color(info) -ti4 $2 - Set by $clr(topic,$3) on $date($4, dd/mm/yyyy - HH:nn:ss) $par($dur($calc($ctime - $4),2) ago)
-  else echo $color(info) -atgi4 - Set by $clr(topic,$3) on $date($4, dd/mm/yyyy - HH:nn:ss) $par($dur($calc($ctime - $4),2) ago)
-}
-raw 479:*:n.echo info -atg Unable to join $2 $par($3-) | haltdef
-raw 406:*:n.echo info -atg $3- $par($2) | haltdef
-raw 401:*:n.echo info -atg $3- $par($2) | haltdef
-raw 403:*:n.echo info -atg $3- $par($2) | haltdef
-raw 005:*:{
-  if ($wildtok($1-,topiclen=*,1,32)) set %topiclen. [ $+ [ $cid ] ] $right($ifmatch,-9)
-  if ($wildtok($1-,maxbans=*,1,32)) set %maxbans. [ $+ [ $cid ] ] $right($ifmatch,-8)
-  cbinfo
-}
-raw 329:*:{
-  if ($2 !isin %körv) {
-    if ($calc($ctime - $3) > 60) n.echo info -t $2 Channel created: $date($3,HH:nn:ss - dd/mm/yyyy) $par($dur($calc($ctime - $3),2) ago) 
-    else n.echo info -t $2 Channel created
-    set -u30 %körv %körv $2
-  }
-}
-raw 331:*:{
-  if ($me ison $2) echo $color(topic) -t $2 $npre No topic set
-  else echo $color(topic) -atg $npre No topic set on $2
-  haltdef
-}
-raw 001:*:cbinfo
-raw 002:*:cbinfo
-raw 003:*:cbinfo
-raw 004:*:cbinfo
-raw 251:*:cbinfo
-raw 252:*:cbinfo
-raw 253:*:cbinfo
-raw 254:*:cbinfo
-raw 255:*:cbinfo
-raw 375:*:cbinfo
-raw 376:*:cbinfo
-raw 472:*:n.echo info -atg $n.quote($2) $3-
-raw 477:*:n.echo info -atg Unable to join $2 $par($3-) | haltdef
-raw 473:*:n.echo info -atg Unable to join $2 $par(invite only) | haltdef
-raw 474:*:n.echo info -atg Unable to join $2 $par(you are banned) | haltdef
-raw 404:*:n.echo info -atg $3- $par($2) | haltdef
-raw 405:*:n.echo info -stge $2- | haltdef
-raw 402:*:n.echo info -atg No such nick/server $par($2) | haltdef
-raw 432:*:n.echo info -atg $3- $n.quote($2) | haltdef
-raw 499:*:n.echo info -atg $3- $par($2)
-raw 433:*:{
-  haltdef
-  n.echo info -atg Nickname $n.quote($2) is already in use
-  if ($ncfg(nickserv_on) == 1) && ($ncfg(nickserv_ghost) == 1) .timer 1 3 nickserv_ghost
-}
-raw 467:*:echo $color(info) -tg $2 $npre $3- | haltdef
-raw 438:*:echo $color(info) -atg $npre $3- | haltdef
-raw 441:*:echo $color(info) -stge $npre $2- | haltdef
-raw 396:*:echo $color(info) -stge $npre $clr(high,$2) $3- | haltdef
-raw 442:*:n.echo info -atg You are not on that channel $par($2) | haltdef
-raw 461:*:n.echo info -atg $3- $par($lower($2)) | haltdef
-raw 471:*:n.echo info -atg Unable to join $2 $par(channel is full) | haltdef
-raw 486:*:n.echo info -atg $3- $par($2) | haltdef
-raw 475:*:n.echo info -atg Unable to join $2 $par(need correct key) | haltdef
-raw 481:*:n.echo info -atg $2- | haltdef
-raw 482:*:echo $color(info) -tg $2 $npre $2 $+ : $3- | haltdef
-raw 478:*:n.echo info -atg $4- $par($3) | haltdef
-raw 443:*:n.echo info -atg $2 is already on $3 | haltdef
-raw 341:*:n.echo info -atg Invited $2 to $3 | haltdef
-raw 305:*:{
-  var %x = $2- $par($iif($awaytime,away for $dur($awaytime)))
-  n.echo notice -stge %x
-  if ($active != status window) n.echo notice -atg %x
-  titleupdate 
-  haltdef
-}
-raw 306:*:{
-  var %x = $2- $par($awaymsg)
-  n.echo notice -stge %x
-  if ($active != status window) n.echo notice -atg %x
-  titleupdate 
-  haltdef
-}
-raw 311:*:{ 
-  unset %w-*
-  if (%whois.idle != 1) {
-    if ($ncfg(whois) == @whois) { 
-      set %w-dest @whois ( $+ $cid $+ )
-      if (!$window(%w-dest)) {
-        if ($ncfg(whois_inside) == 1) { 
-          window -k0n %w-dest 
-          if ($appactive) && ($activecid == $cid) window -a %w-dest
-        }
-        else window -k0d $+ $iif(%whois.window.passive,n) %w-west 200 200 600 200
-      }
-      else {
-        if ($ncfg(whois_inside) != 1) dline %w-dest 1
-        if (%whois.idle != 1) window -g1 %w-dest
-      }
-    }
-    else set %w-dest $ncfg(whois)
-  }
-  set %whois 1
-  set %w-nick $2
-  set %w-address echo $color(whois) %w-dest $chr(160) $+  address: $3 $+ $clr(highlight,@) $+ $4 
-  set %w-name echo $color(whois) %w-dest $chr(160) $+  name: $6-
-  haltdef
-}
-raw 312:*:set %w-server echo $color(whois) %w-dest $chr(160) $+  server: $3 $par($4-) | haltdef
-raw 313:*:set %w-ircop echo $color(whois) %w-dest $chr(160) $+  irc operator | haltdef
-raw 301:*:{
-  haltdef
-  if (%whois == 1) set %w-away echo $color(whois) %w-dest $chr(160) $+  away: $3- 
-  elseif (!%waway. [ $+ [ $2 ] ]) {
-    echo $color(info) -tg $2 $npre $2 is away $par($3-)
-    set -u3600 %waway. [ $+ [ $2 ] ] 1
-  }
-}
-raw 317:*:{
-  if ($calc($ctime - $4) > 1) var %s = $dur($ifmatch) ago
-  set %w-time echo $color(whois) %w-dest $chr(160) $+  idle: $dur($3) $+ , signed on: $date($4,HH:nn:ss - dd/mm/yyyy) $par(%s) 
-  if (%whois.idle) n.echo info -atg $2 has been idle for $dur($3)
-  haltdef
-}
-raw 353:*:{
-  if (%show.names == 1) {
-    n.echo norm -gs $3 $+ : $replace($4-,@,$clr(notice,@),+,$clr(notice,+),%,$clr(notice,%),~,$clr(notice,~),&,$clr(notice,&))
-    haltdef
-  }
-}
-raw 330:*:if (%whois == 1) { set %w-auth echo $color(whois) %w-dest $chr(160) $+  auth: $3 | haltdef } | else { haltdef }
-raw 307:*:if (%whois == 1) { set %w-registered 1 | haltdef }
-raw 338:*:{
-  haltdef
-  if (%whois == 1) {
-    if ($n.qnet) { set %w-realip echo $color(whois) %w-dest $chr(160) $+  user@host: $3 $par($4) }
-    else set %w-realip echo $color(whois) %w-dest $chr(160) $+  user@host: $3-
-  }
-}
-raw 318:*:{
-  if (%whois.idle != 1) {
-    if (%w-name) echo $color(whois) %w-dest $chr(160)
-    if (%w-nick) echo $color(high) %w-dest $kl(whois: %w-nick) $par($iif(%w-registered == 1,registered nick))
-    if (%w-name) $ifmatch
-    if (%w-address) $ifmatch
-    if (%w-chans) $ifmatch
-    if (%w-ircop) $ifmatch
-    if (%w-auth) $ifmatch
-    if (%w-realip) $ifmatch
-    if (%w-away) $ifmatch
-    var %i = 1
-    while (%i <= %w-other-count) {
-      echo $color(whois) %w-dest %w-other [ $+ [ %i ] ]
-      inc %i
-    }
-    if (%w-server) $ifmatch
-    if (%w-time) $ifmatch
-    if (%whois == 1) {
-      echo $color(high) %w-dest $kl(/whois: $time(HH:nn)) 
-      echo $color(whois) %w-dest $chr(160)
-    }
-  }
-  unset %whois* %w-*
-  haltdef
-}
-raw 319:*:{
-  var %c = $3-
-  if ($2 != $me) { 
-    var %i = 1
-    while (%i <= $comchan($2,0)) {
-      var %x = $comchan($2,%i), %c = $reptok(%c,$cmode($2,%x,_) $+ %x,$cmode($2,%x,_) $+  $+ %x $+ ,1,32)
-      inc %i
-    }
-  }
-  set %w-chans echo $color(whois) %w-dest $chr(160) $+  channels: %c $par($calc($0 - 2))
-  haltdef
-}
-raw 314:*:{
-  unset %w-*
-  if (%whois.idle != 1) {
-    if ($ncfg(whois) == @whois) { 
-      set %w-dest @whois ( $+ $cid $+ )
-      if (!$window(%w-dest)) {
-        if ($ncfg(whois_inside) == 1) { 
-          window -k0n %w-dest 
-          if ($appactive) && ($activecid == $cid) window -a %w-dest
-        }
-        else window -k0d $+ $iif(%whois.window.passive,n) %w-west 200 200 600 200
-      }
-      else {
-        if ($ncfg(whois_inside) != 1) dline %w-dest 1
-        if (%whois.idle != 1) window -g1 %w-dest
-      }
-    }
-    else set %w-dest $ncfg(whois)
-  }
-  set %whois 1
-  set %w-nick $2
-  set %w-address echo $color(whois) %w-dest $chr(160) $+  address: $3 $+ $clr(highlight,@) $+ $4 
-  set %w-name echo $color(whois) %w-dest $chr(160) $+  name: $6-
-  echo $color(whois) %w-dest $chr(160)
-  haltdef
-}
-raw 369:*:{
-  if (%w-name) echo $color(whois) %w-dest $chr(160)
-  if (%w-nick) echo $color(high) %w-dest $kl(whowas: %w-nick)
-  if (%w-name) $ifmatch
-  if (%w-address) $ifmatch
-  if (%w-chans) $ifmatch
-  if (%w-ircop) $ifmatch
-  if (%w-auth) $ifmatch
-  if (%w-realip) $ifmatch
-  if (%w-away) $ifmatch
-  var %i = 1
-  while (%i <= %w-other-count) {
-    echo $color(whois) %w-dest %w-other [ $+ [ %i ] ]
-    inc %i
-  }
-  if (%w-server) $ifmatch
-  if (%w-time) $ifmatch
-  if (%whois == 1) {
-    echo $color(high) %w-dest $kl(/whowas: $time(HH:nn)) 
-    echo $color(whois) %w-dest $chr(160)
-  }
-  if ($window(%w-dest)) window -a %w-dest
-  unset %whois* %w-*
-  haltdef
-}
-raw 367:*:{
-  haltdef
-  if (%unba == 1) {
-    inc %totbans1
-    set %ban $+ %totbans1 $3
-  }
-  elseif ($dialog(cc)) {
-    did -a cc 2 $3 $chr(9) $+ $iif($4 === $server,(server),$4) $chr(9) $+ $date($5,HH:nn - dd/mm/yy)
-    inc %totbans
-  }
-  elseif (%ccc.banget) haltdef
-  else echo $color(info) -smtg $npre $kl($clr(normal,$3)) Set by $4 on $date($5,HH:nn - dd/mm/yy) $par($dur($calc($ctime - $5)) ago)
-}
-raw 368:*:{
-  haltdef
-  if ($dialog(cc)) {
-    if (%totbans > 0) did -ra cc 4 Bans ( $+ %totbans $+ / $+ $n.maxbans $+ )
-    else did -ra cc 4 Bans (0/ $+ $n.maxbans $+ )
-    unset %totbans 
-    if (%adopgk == 1) {
-      did -r cc 2
-      did -ra cc 4 Bans
-    }
-  }
-  elseif (%ccc.banget) { haltdef | unset %ccc.banget }
-  else echo $color(info) -stge $npre $kl($clr(normal,$2)) $3-
-}
-raw 346:*:{
-  haltdef
-  if ($dialog(cc)) {
-    did -i cc 2 2 $3 $chr(9) $+ $4 $chr(9) $+ $date($5,HH:nn - dd/mm/yy)
-    inc %totbans
-  }
-  elseif (%ccc.banget) haltdef
-  else echo $color(info) -stge $npre $kl($clr(normal,$3))
-}
-raw 347:*:{
-  haltdef
-  if ($dialog(cc)) {
-    if (%totbans > 0) did -ra cc 4 Invites ( $+ %totbans $+ )
-    else did -ra cc 4 Invites (none)
-    unset %totbans 
-  }
-  elseif (%ccc.banget) { haltdef | unset %ccc.banget }
-  else echo $color(info) -stge $npre $kl($clr(normal,$2)) $3-
-}
-raw 348:*:{
-  haltdef
-  if ($dialog(cc)) {
-    did -i cc 2 2 $3 $chr(9) $+ $4 $chr(9) $+ $date($5,HH:nn - dd/mm/yy)
-    inc %totbans
-  }
-  elseif (%ccc.banget) haltdef
-  else echo $color(info) -stge $npre $kl($clr(normal,$3))
-}
-raw 349:*:{
-  haltdef
-  if ($dialog(cc)) {
-    if (%totbans > 0) did -ra cc 4 Excepts ( $+ %totbans $+ )
-    else did -ra cc 4 Excepts (none)
-    unset %totbans 
-  }
-  elseif (%ccc.banget) { haltdef | unset %ccc.banget }
-  else echo $color(info) -stge $npre $kl($clr(normal,$2)) $3-
-}
-;raw 324:*:return
-;raw 372:*:return
-;raw 422:*:return
-;raw 303:*:return
-raw *:*:{
-  if (%whois == 1) {
-    haltdef
-    inc %w-other-count
-    set %w-other $+ %w-other-count $chr(160) $+  $2 $+  $3-
-  }
-  ;else n.echo info -atgm $2-
-}
-
-; popup menu
-
-menu nicklist {
-  Whois:whois $$1
-  Idle:idle $$1
-  -
-  $iif($me isop #, $iif($1 isop #, - op,+ op),$style(2) +/- op):if ($1 isop #) emode - o | else emode + o
-  $iif($me isop # || $me ishop # && % isin $npre, $iif($1 ishop #, - halfop,+ halfop),):if ($1 ishop #) emode - h | else emode + h
-  $iif($me isop # || $me ishop #, $iif($1 isvoice #, - voice,+ voice),$style(2) +/- voice):if ($1 isvoice #) emode - v | else emode + v
-  $iif($len($prefix) > 3,+/- custom):{
-    var %x = $n.input(Enter custom mode (eg: +a or -a):)
-    if (%x) emode $mid(%x,1,1) $mid(%x,2,1)
-  }
-  -
-  $iif($me isop # || $me ishop #, Kick,$style(2) Kick)
-  .Kick:{
-    var %i = 1
-    while (%i <= $snick(#,0)) {
-      kick $chan $snick(#,%i) $read(config\kicks.txt)
-      inc %i
-    }
-  } 
-  .Kick $chr(9) (reason):{
-    var %i = 1, %kmsg = $$n.input(Enter kick reason:)
-    while (%i <= $snick(#,0)) {
-      kick $chan $snick(#,%i) %kmsg
-      inc %i
-    }
-  }
-  $iif($me isop # || $me ishop #, Ban,$style(2) Ban)
-  .Ban, kick:{ 
-    var %i = 1
-    while (%i <= $snick(#,0)) {
-      bk # $snick(#,%i) $read(config\kicks.txt)
-      inc %i
-    }
-  }
-  .Ban, kick (reason):{ 
-    var %kick = $$n.input(Enter kick reason:), %i = 1
-    while (%i <= $snick(#,0)) {
-      bk # $snick(#,%i) %kick
-      inc %i
-    }
-  }
-  .- 
-  .Kick, ban:{ 
-    var %i = 1
-    while (%i <= $snick(#,0)) {
-      kb # $snick(#,%i) $read(config\kicks.txt)
-      inc %i
-    }
-  }
-  .Kick, ban (reason):{ 
-    var %kick = $$n.input(Enter kick reason:), %i = 1
-    while (%i <= $snick(#,0)) {
-      kb # $snick(#,%i) %kick
-      inc %i
-    }
-  }
-  .-
-  .$iif($n.qnet && q ison #,Kick $+ $chr(44) Q ban auth):{ 
-    var %i = 1
-    while (%i <= $snick($chan,0)) {
-      msg Q chanlev # $snick(#,%i) +b
-      kick # $snick(#,%i) $read(config\kicks.txt)
-      inc %i
-    }
-  }
-  .$iif($n.qnet && q ison #,Kick $+ $chr(44) Q ban auth (reason)):{ 
-    var %kick = $$n.input(Enter kick reason:), %i = 1
-    while (%i <= $snick($chan,0)) {
-      msg Q chanlev # $snick($chan,%i) +b
-      kick # $snick(#,%i) %kick
-      inc %i
-    }
-  }
-  .-
-  .$iif($n.qnet && q ison #,Q ban host):{
-    var %i = 1
-    while (%i <= $snick(#,0)) {
-      msg Q ban # $address($snick($chan,%i),$ncfg(ban_mask))
-      inc %i
-    }
-  }
-  -
-  Stuff
-  .Blacklist
-  ..$$1 (nick only):.write config\blacklist.txt $1 $+ $chr(44) $$n.input(Enter blacklist reason:,Blacklisted) | w_ncfg blacklist 1 | n.blscan # | n.blscanall
-  ..$address($snicks,2):.write config\blacklist.txt $address($snicks,2) $+ $chr(44) $+ $$n.input(Enter blacklist reason:,Blacklisted) | w_ncfg blacklist 1 | n.blscan # | n.blscanall
-  ..$address($snicks,1):.write config\blacklist.txt $address($snicks,1) $+ $chr(44) $+ $$n.input(Enter blacklist reason:,Blacklisted) | w_ncfg blacklist 1 | n.blscan # | n.blscanall
-  ..-
-  ..Edit blacklist:blist
-  .Ignore
-  ..$$1 (nick only):ignore $1 | .ignore on
-  ..$address($snicks,2):ignore $address($snicks,2) | .ignore on
-  ..$address($snicks,1):ignore $address($snicks,1) | .ignore on
-  .Auto op
-  ..$$1 (nick only):aop $1 # | .aop on
-  ..$address($snicks,2):aop $address($snicks,2) # | .aop on
-  ..$address($snicks,1):aop $address($snicks,1) # | .aop on
-  .Auto voice
-  ..$$1 (nick only):avoice $1 # | .avoice on
-  ..$address($snicks,2):avoice $address($snicks,2) # | .avoice on
-  ..$address($snicks,1):avoice $address($snicks,1) # | .avoice on
-
-  .Edit:uwho
-  .-
-  .IP $chr(9) (/dns):dns $$1
-  .View log $chr(9) (/logg):{
-    !query -n $$1 
-    if ($exists($window($1).logfile)) run $window($1).logfile
-    !close -m $$1
-  }
-  .$iif($notify($1),Remove from notify list,Add to notify list):notifyer $1
-  .Host2nick $chr(9) (/host2nick host):dns2nick $remove($address($$1,2),*!*@)
-  .Request op $chr(9) (QuakeNet):msg R requestop # $$1
-  .-
-  Slap:slap $$1
-  -
-  $iif(q ison #,Q flags):botcontrol # $1
-  -
-  DCC/CTCP
-  .[DCC]:return
-  .-
-  .Send:dcc send $$1
-  .Chat:dcc chat $$1
-  .Send current song:mp3send $$1
-  .- 
-  .[CTCP]:return
-  .-
-  .Ping:ctcp $$1 PING
-  .Version:ctcp $$1 VERSION
-  .Finger:ctcp $$1 FINGER
-  .Time:ctcp $$1 TIME
-}
-
-menu status {
-  $iif($status == connected,Reconnect $chr(9) (/server)):server
-  -
-  Control Panel $chr(9) (/setup):setup
-  Auto connect settings $chr(9) (/autocon):autocon
-  Autojoin settings $chr(9) (/caj):caj
-  NickServ settings $chr(9) (/cns):cns
-  -
-  $iif($status == connected,,$style(2)) Force autojoin $chr(9) (/aj):aj
-  $iif($n.qnet && $status == connected,,$style(2)) Auth with Q $chr(9) (/auth):auth
-  $iif($status == connected,,$style(2)) Set mode +x $chr(9) (/mode nick +x):mode $me +x
-  $iif($status == connected,,$style(2)) Check lag $chr(9) (/clag):clag
-  $iif($status == connected,,$style(2)) MOTD $chr(9) (/motd):motd
-  -
-  $iif($n.qnet && $status == connected,Q bot)
-  .Auth now:auth
-  .Register:msg Q hello $$n.input(Enter your mail address:) $$n.input(Enter your mail address again:)
-  .-
-  .Whoami:msg Q whoami
-  .Whois:msg Q whois $$n.input(Enter nick name: $crlf $crlf $+ (Prefix nick with $chr(35) to use auth nick))
-  .Change password:.msg Q@CServe.quakenet.org newpass $$n.input(Enter your new password:) $$n.input(Enter your new password again:)
-  .Change mail:.msg Q@CServe.quakenet.org email $$n.input(Enter your auth password:) $$n.input(Enter your new mail address:) $$n.input(Enter your new mail address again:)
-  .Request password:msg Q requestpassword $$n.input(Enter your mail address:)
-  .Show auth history:msg Q authhistory
-}
-
-menu channel {
-  $left(#,12) $+ $iif($len(#) > 12,...)
-  .Chan central $chr(9) (/cc #chan):channel $1-
-  .Hide events $chr(9) (/hevents #chan):hevents #
-  .-
-  .Search log $chr(9) (/slog <text>):if ($input(Search for:,e,Search log)) slog $!
-  .View log $chr(9) (/logg):logg
-  .View log $chr(9) (external):{
-    if ($exists($window($active).logfile)) run $window($active).logfile
-    else n.echo other -at no log file found for $active
-  }
-  .Show topic $chr(9) (default F7):topic #
-  .Clear $chr(9) (/clear):clear
-  .Clonescan $chr(9) (/clonescan #chan):clonescan #
-  .-
-  .$iif($n.qnet,Request op $chr(9) (QuakeNet)):.msg R requestop $chan $me
-  .$iif($n.qnet,Request op $chr(9) (choose nick)):.msg R requestop $chan $$n.input(Enter nick name:)
-  .-
-  .$iif(Q !ison # && $n.qnet,request Q):msg R requestbot #
-  .-
-  .$iif($me ison #,Leave $chr(9) (/part),Join $chr(9) (/join #chan)):$iif($me ison #,part #,join # $chan(#).key)
-  .Rejoin $chr(9) (/hop):hop
-
-  Autojoin
-  .$iif($read(config\autojoin- [ $+ [ $network ] $+ ] .txt,w,[ $chan [ $+ ] * ]),Remove # from autojoin,Add # to autojoin):n.aj.edit #
-  .Edit autojoin on $network:{
-    var %a = config\autojoin- $+ $network $+ .txt
-    if (!$read(%a)) write -c %a
-    caj $network
-  }
-  .-
-  .$iif($ncfg(autojoin) == 1,$style(1) Autojoin $+ $chr(58) on,Autojoin $+ $chr(58) off):{
-    if ($ncfg(autojoin) == 1) w_ncfg autojoin o
-    else w_ncfg autojoin 1
-  }
-  $iif(q ison # && $n.qnet,Q bot)  
-  .Nick
-  ..Auth now:auth
-  ..Register:msg Q hello $$n.input(Enter your mail address:) $$n.input(Enter your mail address again:)
-  ..-
-  ..Whoami:msg Q whoami
-  ..Whois:msg Q whois $$n.input(Enter nick name: $crlf $crlf $+ (Prefix nick with $chr(35) to use auth nick))
-  ..Change password:.msg Q@CServe.quakenet.org newpass $$n.input(Enter your new password:) $$n.input(Enter your new password again:)
-  ..Change mail:.msg Q@CServe.quakenet.org email $$n.input(Enter your auth password:) $$n.input(Enter your new mail address:) $$n.input(Enter your new mail address again:)
-  ..Request password:msg Q requestpassword $$n.input(Enter your mail address:)
-  ..Show auth history:msg Q authhistory
-  .Channel
-  ..Show welcome message:msg Q welcome #
-  ..Show and edit welcome message:msg Q welcome # | editbox -ap /msg Q welcome # 
-  ..-
-  ..Show online users:msg Q users #
-  ..Show all added users:msg Q chanlev #
-  ..Show chanstats:msg Q chanstat #
-  ..Show op history:msg Q chanophistory #
-  ..Show banlist:msg Q banlist #
-  ..Show autolimit:msg Q autolimit #
-  ..Clear bans:msg Q banclear #
-  ..Clear chanmodes:msg Q clearchan #
-  ..Deop all users:msg Q deopall # 
-  .Chanflags
-  ..Show channel flags:msg Q chanflags #
-  ..-
-  ..Known only $chr(9) (+k)
-  ...on:msg Q chanflags # +k
-  ...off:msg Q chanflags # -k
-  ..Enforce bans $chr(9) (+e)
-  ...on:msg Q chanflags # +e
-  ...off:msg Q chanflags # -e
-  ..Voice all $chr(9) (+v)
-  ...on:msg Q chanflags # +v
-  ...off:msg Q chanflags # -v
-  ..Bitch mode $chr(9) (+b)
-  ...on:msg Q chanflags # +b
-  ...off:msg Q chanflags # -b
-  ..Channel-limit $chr(9) (+c)
-  ...on:msg Q chanflags # +c
-  ...off:msg Q chanflags # -c
-  ..Force topic $chr(9) (+f)
-  ...on:msg Q chanflags # +f
-  ...off:msg Q chanflags # -f
-  ..Force key $chr(9) (+k)
-  ...on:msg Q chanflags # +k
-  ...off:msg Q chanflags # -k
-  ..Force limit $chr(9) (+l)
-  ...on:msg Q chanflags # +l
-  ...off:msg Q chanflags # -l
-  ..Protect ops $chr(9) (+p)
-  ...on:msg Q chanflags # +p
-  ...off:msg Q chanflags # -p
-  ..Topic save $chr(9) (+t)
-  ...on:msg Q chanflags # +t
-  ...off:msg Q chanflags # -t
-  ..Welcome message $chr(9) (+w)
-  ...on:msg Q chanflags # +w
-  ...off:msg Q chanflags # -w
-  .-
-  .Show commands:msg Q showcommands
-  .-
-  .Request op:msg Q op #
-  .Request voice:msg Q voice #
-  -
-  Stuff
-  .Say sys info
-  ..Complete $chr(9) (/sys):sys
-  ..-
-  ..OS $chr(9) (/os):os
-  ..CPU $chr(9) (/cpu):cpu
-  ..Memory usage $chr(9) (/mem):/mem
-  ..Graphics card $chr(9) (/gfx):gfx
-  ..Sound card $chr(9) (/snd):snd
-  ..Total hdd free space $chr(9) (/hd):hd
-  ..Individual free space $chr(9) (/hds):hds
-  ..Ind. free space w/ labels $chr(9) (/hds -l):hds -l
-  ..Ind. mapped free space $chr(9) (/hds -m):hds -m
-  ..Ind. mapped free space w/ labels $chr(9) (/hds -ml):hds -ml
-  ..Uptime $chr(9) (/uptime):uptime
-  ..Connection $chr(9) (/net):net
-  ..IP address $chr(9) (/ip):ip
-  ..Bandwidth usage $chr(9) (/bw):bw
-  ..Change network card used for /bw:.echo -qg $dedll(change_adapter) 
-  .-
-  .Voting $chr(9) (y/n)
-  ..Begin $chr(9) (/vote):vote
-  ..End $chr(9) (/voteoff):voteoff
-  .Say power $chr(9) (/power):power 
-  .Advertise script $chr(9) (/ad):ad
-  .Lag-check (echo) $chr(9) (/clag):clag
-  .-
-  .Google search $chr(9) (/g query):editbox -p /g
-  .Wikipedia search $chr(9) (/wiki query):editbox -p /wiki
-  .IMDb search $chr(9) (/imdb query):editbox -p /imdb
-  .-
-  .Export log $chr(9) (/exportlog)
-  ..This channel:exportlog $window($active).logfile
-  ..Select log file:exportlog
-  Configuration
-  .Control Panel $chr(9) (/setup, F2):setup
-  .-
-  .Misc settings $chr(9) (/misc):misc
-  .Theme/font settings $chr(9) (/theme):theme
-  .Sound/highlight settings $chr(9) (/nq):nq
-  .Song announce $chr(9) (/sa):sa
-  .Protections $chr(9) (/prot):prot
-  .Auto connect $chr(9) (/autocon):autocon
-  .Autojoin $chr(9) (/caj):caj
-  .QuakeNet setup $chr(9) (/quakenet):quakenet
-  .UnderNet setup $chr(9) (/undernet):undernet
-  .NickServ setup $chr(9) (/cns):cns
-  .Notifications $chr(9) (/popups):popups
-  .F-key bindings $chr(9) (/fkeys):fkeys
-  .Logviewer $chr(9) (/lv):lv
-  .Game launcher $chr(9) (/g-join):g-join
-  .Blacklist $chr(9) (/blist):blist
-  .Alarm timer $chr(9) (/alarm):alarm
-  -
-  Song announce
-  .Advertise current song:np
-  .Settings:mp3say
-  .-
-  .Winamp only $+ $chr(58):.
-  .(Shift+F1) $+ $chr(58) Previous:sf1
-  .(Shift+F2) $+ $chr(58) Play:sf2
-  .(Shift+F3) $+ $chr(58) Pause:sf3
-  .(Shift+F4) $+ $chr(58) Stop:sf4
-  .(Shift+F5) $+ $chr(58) Next:sf5
-  .-
-  .Start Winamp:{
-    if ($exists($cit($ncfg(wapath)))) { run $ncfg(wapath) }
-    else {
-      w_ncfg wapath $sfile(winamp.exe,Locate your winamp.exe) 
-      if ($exists($cit($ncfg(wapath)))) { run $ncfg(wapath) }
-    }
-  }
-  .Close Winamp:dll scripts\dll\winamp.dll closewinamp
-  $iif(%psybnc. [ $+ [ $cid ] ],psyBNC)
-  .Play private log:!raw -q playprivatelog
-  .Erase private log:!raw -q eraseprivatelog
-  .-
-  .Play traffic log (last):!raw -q playtrafficlog last
-  .Erase traffic log:!raw -q erasetrafficlog
-  .-
-  .Open psyBNC window:n.bnc psyBNC | window -a $bncwin(psybnc,$cid)
-  $iif(%sbnc. [ $+ [ $cid ] ],sBNC)
-  .Read log:n.bnc sbnc read
-  .Erase log:n.bnc sbnc erase
-  .-
-  .Open sBNC window:n.bnc sBNC | window -a $bncwin(sbnc,$cid)
-  Change nick:editbox -a /nick $me
-  -
-  Away
-  .$iif(!$away,Set away (default F3),$style(2) Set away (default F3))):awaysys 
-  .$iif($away,Return (default F4),$style(2) Return (default F4))):back
-  .-
-  .$iif($away,Change away msg,$style(2) Change away message):away $$n.input(Enter new away message:)
-}
-menu query {
-  Info
-  .Whois (extended):whois $$1
-  .Whois (normal):whois2 $$1
-  .-  
-  .Whois (Q):msg Q whois $$1
-  .Whois (L):msg L whois $$1 
-  .- 
-  .DNS (ip):dns $$1
-  .Host-2-nick:dns2nick $remove($address($$1,2),*!*@)
-  -
-  $iif($ncfg(privpip) == 1,$style(1) Query sound,Query sound):{
-    if ($ncfg(privpip) == 1) { w_ncfg privpip o }
-    else { w_ncfg privpip 1 }
-  }
-  -
-  Ignore $1
-  .$address($1,2):ignore $address($1,2) | n.echo normal -atg Note: If you have a query window open with someone, private messages from them won't be ignored even if their address matches an ignore address.
-  .$address($1,1):ignore $address($1,1) | n.echo normal -atg Note: If you have a query window open with someone, private messages from them won't be ignored even if their address matches an ignore address.
-  .$1 $+ *@*:ignore $1 | n.echo normal -atg Note: If you have a query window open with someone, private messages from them won't be ignored even if their address matches an ignore address.
-  Edit ignore list:uwho
-  -
-  $iif($notify($1),Remove from notify list,Add to notify list):notifyer $1
-  Open get dir:{
-    if ($isdir($getdir $+ $1 $+ )) run $getdir $+ $1
-    else n.echo info -atg No download dir found for $1 $par($getdir $+ $1)
-  }
-  Logfile
-  .View log:logg
-  .View log (external):run $n.log($active)
-  .Search in log:slog $$n.input(Search for:))
-  .Export/save log:exportlog $n.log($active)
-  -
-  DCC/CTCP
-  .[DCC]:return
-  .-
-  .Send:dcc send $$1
-  .Chat:dcc chat $$1
-  .Send current song:mp3send $$1
-  .-
-  .[CTCP]:return
-  .-
-  .Ping:ctcp $$1 ping
-  .Time:ctcp $$1 time
-  .Finger:ctcp $$1 finger
-  .Version:ctcp $$1 version
-}
-menu menubar {
-  .Control Panel (F2):setup
-  Windows
-  .Close all windows:partall | close -icfgms@
-  .Close all querys:scon -a close -m
-  .-
-  .Leave all channels (/partall):partall
-  .Leave all channels (reason):partall $$n.input(Enter part reason:)
-  .-
-  Away
-  .$iif(!$away,Set away (F3),$style(2) Set away (F3))):awaysys 
-  .$iif($away,Return (F4),$style(2) Return (F4))):back
-  .-
-  .$iif($away,Change away msg,$style(2) Change away message):away $$n.input(Enter new away message:)
-  -
-  Alarm timer:alarm 
-  Open DCC get folder:run $getdir
-}
-menu @preview { 
-  rclick:close -@ @preview*
-}
-menu @previewx { 
-  sclick:window -a @preview
-  rclick:close -@ @preview*
-}
-menu @whois (*),@highlights (*) {
-  dclick:{
-    if ($window($active).mdi) window -n $active
-    else close -@ $active
-  }
-  Settings:misc
-}
-menu @psybnc (*) {
-  Play private log:!raw -q PLAYPRIVATELOG
-  Erase private log:!raw -q ERASEPRIVATELOG
-  -
-  Play traffic log (last):!raw -q playtrafficlog last
-  Erase traffic log:!raw -q erasetrafficlog
-  -
-  Bwho (list users):!raw -q bwho
-  -
-  Away
-  .set away-msg (setaway):echo -t $active $npre ex. setaway :offline | editbox $active /quote setaway $chr(58)
-  .set public away-msg (setleavemsg):echo -t $active $npre ex. setaway :offline | editbox $active /quote setleavemsg $chr(58)
-  .-
-  .set away-nick (setawaynick):editbox -p $active /quote setawaynick
-  Server
-  .bconnect:!raw -q bconnect
-  .bquit:!raw -q bquit
-  .jump:!raw -q bjump
-}
-menu @sbnc (*) {
-  Read log:n.bnc sbnc read
-  Erase log:n.bnc sbnc erase
-  -
-  jump:n.bnc sbnc jump
-  partall:n.bnc sbnc partall
-  status:n.bnc sbnc status
-  vhosts:n.bnc sbnc vhosts
-}
-menu @logviewer {
-  dclick:{
-    var %f = $remove($logdir,$mircdir) $+ $line(@logviewer,$1,1), %h = $nofile(%f) $+ $mid($nopath(%f),3,-2)
-    if ($isdir(%h)) || ($mid($nopath(%f),3,-2) == ..) {
-      if ($mid($nopath(%f),3,-2) == ..) var %h = $left(%h,-3)
-      clear -l @logviewer
-      clear @logviewer
-      aline -l @logviewer $chr(91) .. $chr(93)
-      var %a = $finddir(%h,*,0,1,aline -l @logviewer $chr(91) $nopath($1-) $chr(93))
-      echo @logviewer $npre $findfile(%h,*.log,0,1,aline -l @logviewer $nopath($1-)) log files and %a folders in %h
-      set %lv.dir %h $+ \
-    }
-    else {
-      var %y = %lv.dir $+ $nopath(%f)
-      if ($file(%y).size > 10000000) {
-        if (!$n.input(This is a very large log file ( $+ $round($calc($file(%y).size /1024/1024),2) MB) $+ $c44 loading will take some time. Do you want to continue?,y/n)) return
-      }
-      clear @logviewer
-      loadbuf -p @logviewer $cit(%y)
-      echo @logviewer $npre $kl:($nopath(%f)) $lines(%y) lines, $round($calc($file(%y).size /1024),2) KB
-    }
-    titlebar @logviewer - %lv.dir
-  }
-  -
-  $iif($sline(@logviewer,0) && $left($sline(@logviewer,1),1) != [,Rename log) { 
-    var %file = $+(",%lv.dir,$sline(@logviewer,1),")
-    if ($exists(%file)) {
-      var %newname = $n.input(Enter new name (name.log):,$nopath(%file))"
-      if (!%newname) { return }
-      var %newfile = $+(",%lv.dir,$iif($right(%newname,4) == .log,%newname,$+(%newname,.log)),")
-    }
-    else {
-      echo @logviewer $npre %file does not exist
-      dline -l @logviewer $sline(@logviewer,1).ln
-      return
-    }
-    if ($exists(%newfile)) { echo @logviewer $npre %newfile already exists | return }
-    .rename %file %newfile
-    if ($exists(%newfile)) {
-      echo -t @logviewer $npre $nopath(%file) renamed to $nopath(%newfile)
-      rline -l @logviewer $sline(@logviewer,1).ln $nopath(%newfile)
-    }
-  }
-  $iif($sline(@logviewer,0) && $left($sline(@logviewer,1),1) != [,Delete log) {
-    var %file = $+(",%lv.dir,$sline(@logviewer,1),")
-    if ($exists(%file)) {
-      if ($n.input(Delete $nopath(%file) $+ ?,y/n)) {
-        .remove %file
-        dline -l @logviewer $sline(@logviewer,1).ln
-        echo -t @logviewer $npre %file deleted
-      }
-    }
-    else {
-      echo @logviewer $npre %file does not exist
-      dline -l @logviewer $sline(@logviewer,1).ln
-    }
-  }
-  -
-  $iif($sline(@logviewer,0) && $left($sline(@logviewer,1),1) != [,Open selected file):run $+(",%lv.dir,$sline(@logviewer,1),")
-  $iif($sline(@logviewer,0) && $left($sline(@logviewer,1),1) == [,Open selected folder):run $+(",%lv.dir,$mid($sline(@logviewer,1),3,-2),")
-  Open current folder:run $+(",%lv.dir,")
-}
-menu @search*,@log*,@clones*,@whois (*),@psybnc (*),@sbnc (*),@highlights (*) {
-  -
-  Clear:clear
-  Close:close -@ $active
-}
-menu @n.popup {
-  sclick:{
-    if ("*" iswm %popup.window) window -a %popup.window
-    else {
-      if ($appstate == minimized) || ($appstate == tray) {
-        showmirc -r
-      }
-      showmirc -s
-      if ($window(%popup.window)) window -a %popup.window
-    }
-  }
-  rclick:close -@ @n.popup
-}
-
-menu @rcon {
-  send status:rcon_cmd status
-  send stats:rcon_cmd stats
-  send sv_password:rcon_cmd sv_password
-  -
-  Close:{
-    close -@ @rcon
-    sockclose rcon*
-    unset %rcon.*
-  }
-}
-
-; themes
-
-alias n.color.reset {
-  if ($color(0) != 16777215) { color -r 0 }
-  if ($color(1) != 0) { color -r 1 }
-  if ($color(2) != 8323072) { color -r 2 }
-  if ($color(3) != 37632) { color -r 3 }
-  if ($color(4) != 255) { color -r 4 }
-  if ($color(5) != 127) { color -r 5 }
-  if ($color(6) != 10223772) { color -r 6 }
-  if ($color(7) != 32764) { color -r 7 }
-  if ($color(8) != 65535) { color -r 8 }
-  if ($color(9) != 64512) { color -r 9 }
-  if ($color(10) != 9671424) { color -r 10 }
-  if ($color(11) != 16776960) { color -r 11 }
-  if ($color(12) != 16515072) { color -r 12 }
-  if ($color(13) != 16711935) { color -r 13 }
-  if ($color(14) != 8355711) { color -r 14 }
-  if ($color(15) != 13816530) { color -r 15 }
-}
-alias byt-tema {
-  if (!$1) || (($nopath($isalias(ttimestamp).fname) == $1 $+ .tem) && (!%poaksdfopka)) { return }
-  if (!$exists($cit($scriptdirtema\ $+ $1- $+ .tem))) { n.echo normal -atg $scriptdirtema\ $+ $1- $+ .tem does not exist | return }  
-  if (!$dialog(bt)) { dialog -m bt bt | did -a bt 1 Loading theme }  
-  if (!$exists($cit($isalias(ttimestamp).fname))) { 
-    dialog -x bt
-    return
-  }
-  var %ticks $ticks
-  if ($isalias(tname).fname) .unload -rs $cit($isalias(tname).fname)
-  .load -rs $cit($scriptdirtema\ $+ $1- $+ .tem)
-  .timestamp -f $n.timestamp
-  cnicks
-  n.color.reset
-  tclr
-  color treebar $color(background)
-  if ($ncfg(use_theme_fonts) == 1) {
-    if ($tfont) fc $tfont
-    else fc 11 tahoma
-  }
-  dialog -x bt
-  if (!%poaksdfopka) n.echo normal -atgq Theme: $tname loaded $par(Ctrl+F12: clear all windows) $iif(%ticks,$par($calc(($ticks - %ticks) / 1000) $+ s))
-  if (%generatepreview) {
-    .remove $scriptdirtema\$1 $+ . *
-    n.genpreview $1
-  }
-  elseif (!$exists($+(",$scriptdirtema\,$1,.png,"))) && (!$exists($+(",$scriptdirtema\,$1,.bmp,"))) n.genpreview $1
-  unset %generatepreview %poaksdfopka
-}
-alias theme.finished return
-alias theme.reset return
-dialog bt {
-  title "nbs-irc"
-  size -1 -1 50 10
-  option dbu
-  text "", 1, 1 6 50 7, center
-  button "-", 2, 300 300 30 10, disable ok
-}
-On *:dialog:bt:init:0:{
-  n.mdx SetMircVersion $version
-  n.mdx MarkDialog $dname
-  n.mdx SetDialog $dname style dlgframe
-}
-alias cnicks {
-  if ($ncfg(nicklist_use_themed_colors) != 1) return
-  .cnick -r * @
-  .cnick -r * +
-  .cnick -nr *
-  .cnick -m2 $!me $me.clr
-  .cnick -m2 * $op.clr @
-  .cnick -m2 * $voice.clr +
-  .cnick -nm2 * $normal.clr
-}
-alias n.quote {
-  if ($1) {
-    if ($quote.style) return $replace($quote.style,<text>,$1- $+ ) $+ 
-    else return ' $+ $1- $+ '
-  }
-}
-alias par if ($1) return $replace($par.style,<text>,$1- $+ ) $+ 
-alias kl if ($1) return $replace($bracket.style,<text>,$1- $+ ) $+ 
-alias kl: if ($1) return $replace($bracket.style,<text>,$1- $+ ) $+ :
-alias n.timestamp return $ttimestamp $+ $iif($right($ttimestamp,1) != ,)
-alias npre return $pre $+ 
-alias color_gen {
-  if (!$1) {
-    var %f = temp.txt
-    .write -c temp.txt
-  }
-  if ($color(0) != 16777215) .write %f color 0 $color(0)
-  if ($color(1) != 0) .write %f color 1 $color(1)
-  if ($color(2) != 8323072) .write %f color 2 $color(2)
-  if ($color(3) != 37632) .write %f color 3 $color(3)
-  if ($color(4) != 255) .write %f color 4 $color(4)
-  if ($color(5) != 127) .write %f color 5 $color(5)
-  if ($color(6) != 10223772) .write color 6 %f $color(6)
-  if ($color(7) != 32764) .write %f color 7 $color(7)
-  if ($color(8) != 65535) .write %f color 8 $color(8)
-  if ($color(9) != 64512) .write %f color 9 $color(9)
-  if ($color(10) != 9671424) .write %f color 10 $color(10)
-  if ($color(11) != 16776960) .write %f color 11 $color(11)
-  if ($color(12) != 16515072) .write %f color 12 $color(12)
-  if ($color(13) != 16711935) .write %f color 13 $color(13)
-  if ($color(14) != 8355711) .write %f color 14 $color(14)
-  if ($color(15) != 13816530) .write %f color 15 $color(15)
-  .write %f color action text $color(action)
-  .write %f color ctcp text $color(ctcp)
-  .write %f color info text $color(info)
-  .write %f color info2 text $color(info2)
-  .write %f color highlight text $color(highlight)
-  .write %f color invite text $color(invite)
-  .write %f color join text $color(join)
-  .write %f color kick text $color(kick)
-  .write %f color mode text $color(mode)
-  .write %f color nick text $color(nick)
-  .write %f color normal text $color(normal)
-  .write %f color notice text $color(notice)
-  .write %f color notify text $color(notify)
-  .write %f color other text $color(info)
-  .write %f color own text $color(own)
-  .write %f color part text $color(part)
-  .write %f color quit text $color(quit)
-  .write %f color topic text $color(topic)
-  .write %f color wallops text $color(wallops)
-  .write %f color whois text $color(whois)
-  .write %f color listbox $color(listbox)
-  .write %f color listbox text $color(listbox text)
-  .write %f color title text $color(title)
-  .write %f color editbox text $color(editbox text)
-  .write %f color inactive $color(inactive)
-  .write %f color background $color(background)
-  .write %f color editbox $color(editbox)
-  .write %f color treebar text $color(treebar text)
-  if (%f == temp.txt) {
-    if ($dialog(tedit)) loadbuf -o tedit 3 temp.txt
-    else run %f
-    .timer 1 1 .remove %f
-  }
-}
-alias pretimestamp {
-  return $replace($ttimestamp,HH,$1,nn,$2,ss,$3)
-}
-alias n.genpreview {
-  var %font = $window(status window).font, %size = $window(status window).fontsize
-  window -k0dnhp +dl @tp -1 -1 386 210
-  drawtext -p @tp $color(join) %font %size 3 0 $pretimestamp($time(HH),$time(nn),10) $npre Join: elof $par(~mjo@h10v2ftb31p876.com)
-  drawtext -p @tp $color(mode) %font %size 3 14 $pretimestamp($time(HH),$time(nn),10) $npre Q $par(+v) elof
-  drawtext -p @tp $color(own) %font %size 3 28 $pretimestamp($time(HH),$time(nn),13) $replace($me.style,<mode>,@,<nick>,Yngve) $+  hello
-  drawtext -p @tp $color(normal) %font %size 3 42 $pretimestamp($time(HH),$time(nn),15) $replace($nick.style,<mode>,+,<nick>,elof) $+  hi
-  drawtext -p @tp $color(nick) %font %size 3 56 $pretimestamp($time(HH),$time(nn),17) $npre $clr(high,nick) is now known as $clr(high,nick-afk)
-  drawtext -p @tp $color(normal) %font %size 3 70 $pretimestamp($time(HH),$time(nn),20) $replace($nick.style,<mode>,+,<nick>,elof) $+  where's albin?
-  drawtext -p @tp $color(normal) %font %size 3 84 $pretimestamp($time(HH),$time(nn),23) $replace($nick.style,<mode>,,<nick>,albin) $+  here
-  drawtext -p @tp $color(normal) %font %size 3 98 $pretimestamp($time(HH),$time(nn),25) $replace($nick.style,<mode>,+,<nick>,elof) $+  ok, pm
-  drawtext -p @tp $color(normal) %font %size 3 112 $pretimestamp($time(HH),$time(nn),26) $replace($nick.style,<mode>,@,<nick>,karl-bertil) $+  bla bla
-  drawtext -p @tp $color(part) %font %size 3 126 $pretimestamp($time(HH),$time(nn),30) $npre Part: ingvar $par(id@h140z26ls35a876.net)
-  drawtext -p @tp $color(topic) %font %size 3 140 $pretimestamp($time(HH),$time(nn),33) $npre Yngve changes topic to: Preview
-  drawtext -p @tp $color(join) %font %size 3 154 $pretimestamp($time(HH),$time(nn),35) $npre Join: billythekid $par(~lame@455-b17ch.cbh.com)
-  drawtext -p @tp $color(normal) %font %size 3 168 $pretimestamp($time(HH),$time(nn),39) $replace($nick.style,<mode>,,<nick>,billythekid) $+  Hello, is this the preview channel?
-  drawtext -p @tp $color(own) %font %size 3 182 $pretimestamp($time(HH),$time(nn),42) $replace($me.style,<mode>,@,<nick>,Yngve) $+  Yes it is.
-  drawtext -p @tp $color(quit) %font %size 3 196 $pretimestamp($time(HH),$time(nn),44) $npre Quit: Random $par(id@c-d7bd70d5.com) $par(Signed off)
-  drawsave -b24 @tp $qt($scriptdirtema\ $+ $left($nopath($isalias(tname).fname),-4) $+ .bmp)
-  close -@ @tp
-  n.echo other -stge Preview for $tname generated
 }

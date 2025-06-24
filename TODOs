@@ -1,14 +1,26 @@
-# Things i know i have to do:
+# Things i know i have to do and is HIGH priority after "The big cleanup":
 * Redo n.versioncheck
 - This checks orgiginal website but that doesnt work anymore
 - Consider checking github instead
+* Nickserv ghost optimize
+- After ghost "(15:16:02)  -› [notice from NickServ]: YOURNICKNAME has been ghosted." mirc doesnt regain the nickname
 
 # Ideas:
+* Disable all .dll stuff if possible
+- scripts\dll\i.dll can be removed (some icon stuff, i think it can be replaced with an mirc.ini settings)
+- Other i.dll stuff like in dialogs i think can be replaced with the nbs.ico file i saw
+* Rename all sweedish words to english (some code is in sweedish :)
+* Add new echo lines for mode,join,part,quit,kick etc
+- Make a checkbox or something in settings for theme??? If user want to use nbs native, mirc native or maby custom ?
 
 # The big cleanup:
-* Move all aliases from alias*.mrc to aliases.mrc
-- Also all aliases from main.mrc to aliases.mrc
-
-# Loading 
-* Create popups.mrc 
-- Move all popups to this file from main.mrc
+* Continue move stuff out from main.mrc
+* Some time later, rename main.mrc to dialogs.mrc (thats what's left except some aliases for the dialogs)
+* Continue move events to system.mrc with it's aliases (so not every alias will be in aliases.mrc)
+- This is only for aliases dedcated for an event, if it's a alias like "msg" it should be in aliases.mrc
+* Continue move all mp3\winamp\song stuff to own scriptfile (media.mrc)
+- Search for more music stuff
+* Continue move all sysinfo stuff to own scriptfile (sysinfo.mrc)
+- Search for more sysinfo stuff
+* Remove rcon\gaming stuff
+* Remove /vote 
